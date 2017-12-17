@@ -28,3 +28,5 @@ bin/
 MJCompiler.iml
 logs/
 *~
+report/
+doc/

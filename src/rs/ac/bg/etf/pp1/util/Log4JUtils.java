@@ -1,5 +1,6 @@
 package rs.ac.bg.etf.pp1.util;
 
+
 import org.apache.log4j.Appender;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
@@ -40,7 +41,4 @@ public class Log4JUtils {
         fAppender.setFile(logFile.getAbsolutePath());
         fAppender.activateOptions();
     }
-
-
-
 }
