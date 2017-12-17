@@ -3,14 +3,6 @@ jdk:
   openjdk8
   oraclejdk8
 
-before_script:
-  - mkdir lib && cd lib/
-  - wget https://repo1.maven.org/maven2/junit/junit/4.12/junit-4.12.jar
-  - mv junit-4.12.jar junit.jar
-  - wget https://repo1.maven.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar
-  - mv hamcrest-core-1.3.jar hamcrest-core.jar
-  - cd ..
-
 notifications:
   email:
     on_success: never

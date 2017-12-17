@@ -19,7 +19,8 @@
 
     <path id="junit.class.path">
         <pathelement location="${build.dir}"/>
-        <pathelement location="${lib.dir}/*"/>
+        <fileset dir="${lib.dir}" />
+        <pathelement location="${config.dir}" />
     </path>
 
     <target name="clean">
@@ -37,19 +38,19 @@
 
     <target name="generate_lexer">
         <java jar="${lib.dir}/JFlex.jar" fork="true" failonerror="true">
-            <arg line="-d ${src.dir} ${spec.dir}/mjlexer.flex"/>
+            <arg line="-d ${src.dir}/rs/ac/bg/etf/pp1 ${spec.dir}/mjlexer.flex"/>
             <classpath refid="junit.class.path" />
         </java>
     </target>
 
     <target name="generate_parser" >
-        <java jar="${lib.dir}/cup_v10k.jar" fork="true" failonerror="true">
-            <arg line="-destdir ${src.dir} -dump_states -parser MJParser -ast rs.ac.bg.etf.pp1.ast -buildtree ${spec.dir}/mjparser.cup" />
+        <java jar="${lib.dir}/cup_v10k.jar" dir="${src.dir}" fork="true" failonerror="true">
+            <arg line="-destdir rs/ac/bg/etf/pp1 -dump_states -parser MJParser -ast rs.ac.bg.etf.pp1.ast -buildtree ../${spec.dir}/mjparser.cup" />
             <classpath refid="junit.class.path" />
         </java>
     </target>
 
-    <target name="build" depends="init, generate_lexer, generate_parser">
+    <target name="build" depends="init, generate_parser, generate_lexer">
         <javac debug="true" destdir="${build.dir}" source="${source}" target="${target}"
                debuglevel="${debuglevel}">
             <src path="${src.dir}"/>

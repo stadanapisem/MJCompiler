@@ -1,0 +1,20 @@
+package rs.ac.bg.etf.pp1;
+
+import java_cup.runtime.*;
+import rs.ac.bg.etf.pp1.ast.*;
+import java.io.*;
+
+nonterminal program, prog_id;
+terminal PROGRAM, VOID, BREAK, CLASS, IF, ELSE, NEW, RETURN, DO, WHILE, EXTENDS;
+terminal CONTINUE, PRINT, READ, PLUS, MINUS, MUL, DIV, MOD, EQ, NEQ, GRT, GRTEQ;
+terminal LSS, LEQ, AND, OR, EQUAL, INC, DEC, SEMI, COMMA, LPAREN, RPAREN;
+terminal RBRACE, LBRACE, LSQUARE, RSQUARE;
+
+terminal int NUMBER;
+terminal boolean BOOL;
+terminal char CHAR;
+terminal String IDENT;
+
+program ::= (Program) PROGRAM prog_id:o LBRACE RBRACE;
+
+prog_id ::= (Prog_id) IDENT:id;
