@@ -8,7 +8,7 @@ import rs.ac.bg.etf.pp1.util.Log4JUtils;
 
 import java.io.*;
 
-public class MJTest {
+public class TestMJ {
 
     static {
         DOMConfigurator.configure(Log4JUtils.instance().findLoggerConfigFile());
@@ -17,7 +17,7 @@ public class MJTest {
 
     @Test
     public void main() throws IOException {
-        Logger log = Logger.getLogger(MJTest.class);
+        Logger log = Logger.getLogger(TestMJ.class);
         Reader br = null;
         try {
 

@@ -1,17 +1,17 @@
 // generated with ast extension for cup
 // version 0.8
-// 17/11/2017 20:8:50
+// 24/0/2018 22:42:39
 
 
 package rs.ac.bg.etf.pp1.ast;
 
-public class Prog_id implements SyntaxNode {
+public class Type implements SyntaxNode {
 
     private SyntaxNode parent;
     private int line;
     private String id;
 
-    public Prog_id (String id) {
+    public Type (String id) {
         this.id=id;
     }
 
@@ -57,13 +57,13 @@ public class Prog_id implements SyntaxNode {
     public String toString(String tab) {
         StringBuffer buffer=new StringBuffer();
         buffer.append(tab);
-        buffer.append("Prog_id(\n");
+        buffer.append("Type(\n");
 
         buffer.append(" "+tab+id);
         buffer.append("\n");
 
         buffer.append(tab);
-        buffer.append(") [Prog_id]");
+        buffer.append(") [Type]");
         return buffer.toString();
     }
 }

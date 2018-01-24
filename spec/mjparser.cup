@@ -4,17 +4,94 @@ import java_cup.runtime.*;
 import rs.ac.bg.etf.pp1.ast.*;
 import java.io.*;
 
-nonterminal program, prog_id;
-terminal PROGRAM, VOID, BREAK, CLASS, IF, ELSE, NEW, RETURN, DO, WHILE, EXTENDS;
-terminal CONTINUE, PRINT, READ, PLUS, MINUS, MUL, DIV, MOD, EQ, NEQ, GRT, GRTEQ;
-terminal LSS, LEQ, AND, OR, EQUAL, INC, DEC, SEMI, COMMA, LPAREN, RPAREN;
-terminal RBRACE, LBRACE, LSQUARE, RSQUARE;
+// *****************  KEYWORDS **********************
+terminal PROGRAM, CONST, VOID, BREAK, CLASS, IF, ELSE, NEW, RETURN, DO, WHILE, EXTENDS;
+terminal CONTINUE, PRINT, READ;
 
+// *****************  OPERATORS *********************
+terminal PLUS, MINUS, MUL, DIV, MOD, EQ, NEQ, GRT, GRTEQ, LSS, LEQ, AND, OR, ASSIGN, INC, DEC;
+terminal SEMI, COMMA, DOT, LPAREN, RPAREN, RBRACE, LBRACE, LSQUARE, RSQUARE;
+
+// *****************  IDENTIFICATORS ****************
 terminal int NUMBER;
-terminal boolean BOOL;
+terminal Boolean BOOL;
 terminal char CHAR;
 terminal String IDENT;
 
-program ::= (Program) PROGRAM prog_id:o LBRACE RBRACE;
+// *****************  NONTERMINALS  *****************
+nonterminal program, program_name;
 
-prog_id ::= (Prog_id) IDENT:id;
+nonterminal type, method_return_type;
+
+nonterminal declaration_list, declaration,
+            const_declaration_line, const_id_list, const_id, const_identifier, constant, numeric_const, bool_const, char_const,
+            var_declaration_line, var_declaration_list, var_id_list, var_id, var_identifier,
+            class_declaration, class_identifier,
+            method_decl_section, optional_method_decl_section, method_decl_list, method_decl, method_identifier, method_definition,
+            formal_parameter_section, formal_parameter_list, formal_parameter;
+
+nonterminal statement_list;
+// **************************************************
+// PRODUCTIONS
+//
+// *****************  PROGRAM  **********************
+program ::= (Program) PROGRAM program_name:o declaration_list LBRACE method_decl_section RBRACE;
+program_name ::= (ProgramName) IDENT:id;
+
+// *****************  TYPE **************************
+type ::= (Type) IDENT:id;
+method_return_type ::= (MethodReturnType) type
+                     | (VoidReturnType) VOID;
+
+// *****************  DECLARATIONS ******************
+declaration_list ::= (DeclarationList) declaration_list declaration
+                   | (NoDeclarations) /* epsilon */;
+
+  declaration ::= (DeclarationConst) const_declaration_line
+                | (DeclarationVar) var_declaration_line
+                | (DeclarationClass) class_declaration;
+
+    // *** CONSTANT DECLARATION
+    const_declaration_line ::= (ConstDeclarationLine) CONST type: t const_id_list SEMI;
+      const_id_list ::= (ConstIdList) const_id_list COMMA const_id
+                      | (ConstIdTerm) const_id;
+        const_id ::= (ConstId) const_identifier ASSIGN constant;
+        const_identifier ::= (ConstIdentifier) IDENT:id;
+        constant ::= (ConstNumber) numeric_const
+                   | (ConstBool) bool_const
+                   | (ConstChar) char_const;
+          numeric_const ::= (NumericConst) NUMBER: var;
+          bool_const ::= (BoolConst) BOOL: var;
+          char_const ::= (CharConst) CHAR: var;
+
+    // *** VARIABLES DECLARATION
+    var_declaration_line ::= (VarDeclarationLine) type: t var_id_list SEMI;
+    var_declaration_list ::= (VarDeclarationList) var_declaration_list var_declaration_line
+                           | (NoVariableDeclarations) /* epsilon */;
+      var_id_list ::= (VarIDList) var_id_list COMMA var_id
+                    | (VarIDTerm) var_id;
+        var_id ::= (VarID) var_identifier: ident
+                 | (VarIDArray) var_identifier: ident LSQUARE RSQUARE;
+           var_identifier ::= (VarIdentifier) IDENT:id;
+
+    // *** CLASS DECLARATION
+    class_declaration ::= (ClassDeclaration) CLASS class_identifier LBRACE var_declaration_list optional_method_decl_section RBRACE;
+      class_identifier ::= (ClassIdentifier) IDENT: id;
+
+    // *** METHOD DECLARATION
+    optional_method_decl_section ::= (OptionalMethodDeclSection) method_decl_section
+                                   | (NoMethodSection)/* epsilon */;
+    method_decl_section ::= (MethodDeclSection) LBRACE method_decl_list RBRACE;
+      method_decl_list ::= (MethodDeclList) method_decl_list method_decl
+                         | (MethodTerm) /* epsilon */;
+        method_decl ::= (MethodDeclaration) method_return_type method_identifier LPAREN formal_parameter_section RPAREN var_declaration_list LBRACE;
+          method_identifier ::= (MethodIdentifier) IDENT: id;
+          formal_parameter_section ::= (FormalParameters) formal_parameter_list
+                                     | (NoParameters) /* epsilon */;
+            formal_parameter_list ::= (FormalParameterList) formal_parameter_list COMMA formal_parameter
+                                    | (FormalTermParameter) formal_parameter;
+              formal_parameter ::= (FormalParameter) type IDENT;
+        method_definition ::= (MethodDefinition) method_decl statement_list RBRACE;
+
+// ***************** STATEMENTS *********************
+statement_list ::= ;

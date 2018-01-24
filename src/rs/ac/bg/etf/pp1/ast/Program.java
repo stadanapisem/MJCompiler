@@ -1,6 +1,6 @@
 // generated with ast extension for cup
 // version 0.8
-// 17/11/2017 20:8:50
+// 24/0/2018 22:42:39
 
 
 package rs.ac.bg.etf.pp1.ast;
@@ -9,19 +9,41 @@ public class Program implements SyntaxNode {
 
     private SyntaxNode parent;
     private int line;
-    private Prog_id prog_id;
+    private Program_name program_name;
+    private Declaration_list declaration_list;
+    private Method_decl_section method_decl_section;
 
-    public Program (Prog_id prog_id) {
-        this.prog_id=prog_id;
-        if(prog_id!=null) prog_id.setParent(this);
+    public Program (Program_name program_name, Declaration_list declaration_list, Method_decl_section method_decl_section) {
+        this.program_name=program_name;
+        if(program_name!=null) program_name.setParent(this);
+        this.declaration_list=declaration_list;
+        if(declaration_list!=null) declaration_list.setParent(this);
+        this.method_decl_section=method_decl_section;
+        if(method_decl_section!=null) method_decl_section.setParent(this);
     }
 
-    public Prog_id getProg_id() {
-        return prog_id;
+    public Program_name getProgram_name() {
+        return program_name;
     }
 
-    public void setProg_id(Prog_id prog_id) {
-        this.prog_id=prog_id;
+    public void setProgram_name(Program_name program_name) {
+        this.program_name=program_name;
+    }
+
+    public Declaration_list getDeclaration_list() {
+        return declaration_list;
+    }
+
+    public void setDeclaration_list(Declaration_list declaration_list) {
+        this.declaration_list=declaration_list;
+    }
+
+    public Method_decl_section getMethod_decl_section() {
+        return method_decl_section;
+    }
+
+    public void setMethod_decl_section(Method_decl_section method_decl_section) {
+        this.method_decl_section=method_decl_section;
     }
 
     public SyntaxNode getParent() {
@@ -45,16 +67,22 @@ public class Program implements SyntaxNode {
     }
 
     public void childrenAccept(Visitor visitor) {
-        if(prog_id!=null) prog_id.accept(visitor);
+        if(program_name!=null) program_name.accept(visitor);
+        if(declaration_list!=null) declaration_list.accept(visitor);
+        if(method_decl_section!=null) method_decl_section.accept(visitor);
     }
 
     public void traverseTopDown(Visitor visitor) {
         accept(visitor);
-        if(prog_id!=null) prog_id.traverseTopDown(visitor);
+        if(program_name!=null) program_name.traverseTopDown(visitor);
+        if(declaration_list!=null) declaration_list.traverseTopDown(visitor);
+        if(method_decl_section!=null) method_decl_section.traverseTopDown(visitor);
     }
 
     public void traverseBottomUp(Visitor visitor) {
-        if(prog_id!=null) prog_id.traverseBottomUp(visitor);
+        if(program_name!=null) program_name.traverseBottomUp(visitor);
+        if(declaration_list!=null) declaration_list.traverseBottomUp(visitor);
+        if(method_decl_section!=null) method_decl_section.traverseBottomUp(visitor);
         accept(visitor);
     }
 
@@ -63,8 +91,20 @@ public class Program implements SyntaxNode {
         buffer.append(tab);
         buffer.append("Program(\n");
 
-        if(prog_id!=null)
-            buffer.append(prog_id.toString("  "+tab));
+        if(program_name!=null)
+            buffer.append(program_name.toString("  "+tab));
+        else
+            buffer.append(tab+"  null");
+        buffer.append("\n");
+
+        if(declaration_list!=null)
+            buffer.append(declaration_list.toString("  "+tab));
+        else
+            buffer.append(tab+"  null");
+        buffer.append("\n");
+
+        if(method_decl_section!=null)
+            buffer.append(method_decl_section.toString("  "+tab));
         else
             buffer.append(tab+"  null");
         buffer.append("\n");

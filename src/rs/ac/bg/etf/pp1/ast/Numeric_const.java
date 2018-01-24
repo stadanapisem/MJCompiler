@@ -1,11 +1,11 @@
 // generated with ast extension for cup
 // version 0.8
-// 17/11/2017 19:39:15
+// 24/0/2018 22:42:39
 
 
 package rs.ac.bg.etf.pp1.ast;
 
-public abstract class Programm implements SyntaxNode {
+public abstract class Numeric_const implements SyntaxNode {
 
     private SyntaxNode parent;
 
