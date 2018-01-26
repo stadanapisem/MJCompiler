@@ -5,16 +5,15 @@
 
 package rs.ac.bg.etf.pp1.ast;
 
-public class VarDeclarationLine extends Var_declaration_line {
+public class FormalParameterArray extends Formal_parameter {
 
     private Type type;
-    private Var_id_list var_id_list;
+    private String I2;
 
-    public VarDeclarationLine (Type type, Var_id_list var_id_list) {
+    public FormalParameterArray (Type type, String I2) {
         this.type=type;
         if(type!=null) type.setParent(this);
-        this.var_id_list=var_id_list;
-        if(var_id_list!=null) var_id_list.setParent(this);
+        this.I2=I2;
     }
 
     public Type getType() {
@@ -25,12 +24,12 @@ public class VarDeclarationLine extends Var_declaration_line {
         this.type=type;
     }
 
-    public Var_id_list getVar_id_list() {
-        return var_id_list;
+    public String getI2() {
+        return I2;
     }
 
-    public void setVar_id_list(Var_id_list var_id_list) {
-        this.var_id_list=var_id_list;
+    public void setI2(String I2) {
+        this.I2=I2;
     }
 
     public void accept(Visitor visitor) {
@@ -39,25 +38,22 @@ public class VarDeclarationLine extends Var_declaration_line {
 
     public void childrenAccept(Visitor visitor) {
         if(type!=null) type.accept(visitor);
-        if(var_id_list!=null) var_id_list.accept(visitor);
     }
 
     public void traverseTopDown(Visitor visitor) {
         accept(visitor);
         if(type!=null) type.traverseTopDown(visitor);
-        if(var_id_list!=null) var_id_list.traverseTopDown(visitor);
     }
 
     public void traverseBottomUp(Visitor visitor) {
         if(type!=null) type.traverseBottomUp(visitor);
-        if(var_id_list!=null) var_id_list.traverseBottomUp(visitor);
         accept(visitor);
     }
 
     public String toString(String tab) {
         StringBuffer buffer=new StringBuffer();
         buffer.append(tab);
-        buffer.append("VarDeclarationLine(\n");
+        buffer.append("FormalParameterArray(\n");
 
         if(type!=null)
             buffer.append(type.toString("  "+tab));
@@ -65,14 +61,11 @@ public class VarDeclarationLine extends Var_declaration_line {
             buffer.append(tab+"  null");
         buffer.append("\n");
 
-        if(var_id_list!=null)
-            buffer.append(var_id_list.toString("  "+tab));
-        else
-            buffer.append(tab+"  null");
+        buffer.append(" "+tab+I2);
         buffer.append("\n");
 
         buffer.append(tab);
-        buffer.append(") [VarDeclarationLine]");
+        buffer.append(") [FormalParameterArray]");
         return buffer.toString();
     }
 }

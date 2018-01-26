@@ -4,6 +4,14 @@ import java_cup.runtime.*;
 import rs.ac.bg.etf.pp1.ast.*;
 import java.io.*;
 
+scan with {:
+    Symbol s = this.getScanner().next_token();
+    if (s != null && s.value != null)
+       System.err.println(s.toString() + " " + s.value.toString());
+
+    return s;
+:}
+
 // *****************  KEYWORDS **********************
 terminal PROGRAM, CONST, VOID, BREAK, CLASS, IF, ELSE, NEW, RETURN, DO, WHILE, EXTENDS;
 terminal CONTINUE, PRINT, READ;
@@ -19,23 +27,16 @@ terminal char CHAR;
 terminal String IDENT;
 
 // *****************  NONTERMINALS  *****************
-nonterminal Program program;
-nonterminal Program_name program_name;
+nonterminal Program program; nonterminal rs.etf.pp1.symboltable.concepts.Obj program_name;
 
-nonterminal Type type;
-nonterminal Method_return_type method_return_type;
+nonterminal Method_return_type method_return_type; nonterminal rs.etf.pp1.symboltable.concepts.Struct type;
 
-nonterminal Declaration_list declaration_list;
+nonterminal Declaration_section declaration_section;
 nonterminal Declaration declaration;
 nonterminal
             Const_declaration_line const_declaration_line;
 nonterminal Const_id_list const_id_list;
-nonterminal Const_id const_id;
 nonterminal Const_identifier const_identifier;
-nonterminal Constant constant;
-nonterminal Numeric_const numeric_const;
-nonterminal Bool_const bool_const;
-nonterminal Char_const char_const;
 nonterminal
             Var_declaration_line var_declaration_line;
 nonterminal Var_declaration_list var_declaration_list;
@@ -56,22 +57,25 @@ nonterminal
             Formal_parameter_section formal_parameter_section;
 nonterminal Formal_parameter_list formal_parameter_list;
 nonterminal Formal_parameter formal_parameter;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj const_id;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj constant, char_const, numeric_const, bool_const;
 
 nonterminal Statement_list statement_list;
 // **************************************************
+//
 // PRODUCTIONS
 //
 // *****************  PROGRAM  **********************
-program ::= (Program) PROGRAM program_name:o declaration_list:d1 LBRACE method_decl_section:m2 RBRACE {: RESULT=new Program(o, d1, m2); RESULT.setLine(oleft); :};
+program ::= (Program) PROGRAM program_name:pName declaration_section:d1 method_decl_section:m2 {: RESULT=new Program(pName, d1, m2); RESULT.setLine(pNameleft); :};
 program_name ::= (ProgramName) IDENT:id {: RESULT=new ProgramName(id); RESULT.setLine(idleft); :};
 
 // *****************  TYPE **************************
-type ::= (Type) IDENT:id {: RESULT=new Type(id); RESULT.setLine(idleft); :};
+type ::= (Type) IDENT: typeName {: RESULT=new Type(typeName); RESULT.setLine(typeNameleft); :};
 method_return_type ::= (MethodReturnType) type:t1 {: RESULT=new MethodReturnType(t1); RESULT.setLine(t1left); :}
                      | (VoidReturnType) VOID {: RESULT=new VoidReturnType(); :};
 
 // *****************  DECLARATIONS ******************
-declaration_list ::= (DeclarationList) declaration_list:d1 declaration:d2 {: RESULT=new DeclarationList(d1, d2); RESULT.setLine(d1left); :}
+declaration_section ::= (DeclarationSection) declaration_section:d1 declaration:d2 {: RESULT=new DeclarationSection(d1, d2); RESULT.setLine(d1left); :}
                    | (NoDeclarations) {: RESULT=new NoDeclarations(); :} /* epsilon */;
 
   declaration ::= (DeclarationConst) const_declaration_line:c1 {: RESULT=new DeclarationConst(c1); RESULT.setLine(c1left); :}
@@ -83,10 +87,10 @@ declaration_list ::= (DeclarationList) declaration_list:d1 declaration:d2 {: RES
       const_id_list ::= (ConstIdList) const_id_list:c1 COMMA const_id:c2 {: RESULT=new ConstIdList(c1, c2); RESULT.setLine(c1left); :}
                       | (ConstIdTerm) const_id:c1 {: RESULT=new ConstIdTerm(c1); RESULT.setLine(c1left); :};
         const_id ::= (ConstId) const_identifier:c1 ASSIGN constant:c2 {: RESULT=new ConstId(c1, c2); RESULT.setLine(c1left); :};
-        const_identifier ::= (ConstIdentifier) IDENT:id {: RESULT=new ConstIdentifier(id); RESULT.setLine(idleft); :};
-        constant ::= (ConstNumber) numeric_const:n1 {: RESULT=new ConstNumber(n1); RESULT.setLine(n1left); :}
-                   | (ConstBool) bool_const:b1 {: RESULT=new ConstBool(b1); RESULT.setLine(b1left); :}
-                   | (ConstChar) char_const:c1 {: RESULT=new ConstChar(c1); RESULT.setLine(c1left); :};
+        const_identifier ::= (ConstIdentifier) IDENT: id {: RESULT=new ConstIdentifier(id); RESULT.setLine(idleft); :};
+        constant ::= (ConstNumber) numeric_const: var {: RESULT=new ConstNumber(var); RESULT.setLine(varleft); :}
+                   | (ConstBool) bool_const: var {: RESULT=new ConstBool(var); RESULT.setLine(varleft); :}
+                   | (ConstChar) char_const: var {: RESULT=new ConstChar(var); RESULT.setLine(varleft); :};
           numeric_const ::= (NumericConst) NUMBER: var {: RESULT=new NumericConst(var); RESULT.setLine(varleft); :};
           bool_const ::= (BoolConst) BOOL: var {: RESULT=new BoolConst(var); RESULT.setLine(varleft); :};
           char_const ::= (CharConst) CHAR: var {: RESULT=new CharConst(var); RESULT.setLine(varleft); :};
@@ -117,7 +121,8 @@ declaration_list ::= (DeclarationList) declaration_list:d1 declaration:d2 {: RES
                                      | (NoParameters) {: RESULT=new NoParameters(); :} /* epsilon */;
             formal_parameter_list ::= (FormalParameterList) formal_parameter_list:f1 COMMA formal_parameter:f2 {: RESULT=new FormalParameterList(f1, f2); RESULT.setLine(f1left); :}
                                     | (FormalTermParameter) formal_parameter:f1 {: RESULT=new FormalTermParameter(f1); RESULT.setLine(f1left); :};
-              formal_parameter ::= (FormalParameter) type:t1 IDENT:I2 {: RESULT=new FormalParameter(t1, I2); RESULT.setLine(t1left); :};
+              formal_parameter ::= (FormalParameter) type:t1 IDENT:I2 {: RESULT=new FormalParameter(t1, I2); RESULT.setLine(t1left); :}
+                                 | (FormalParameterArray) type:t1 IDENT:I2 LSQUARE RSQUARE {: RESULT=new FormalParameterArray(t1, I2); RESULT.setLine(t1left); :};
         method_definition ::= (MethodDefinition) method_decl:m1 statement_list:s2 RBRACE {: RESULT=new MethodDefinition(m1, s2); RESULT.setLine(m1left); :};
 
 // ***************** STATEMENTS *********************

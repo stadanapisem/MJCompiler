@@ -13,7 +13,7 @@ public class LexerTest {
     @Test public void test1() {
         Reader br = null;
         try {
-            File sourceCode = new File("test/first.mj");
+            File sourceCode = new File("test/constant1.mj");
             System.out.println("Compiling source file: " + sourceCode.getAbsolutePath());
 
             br = new BufferedReader(new FileReader(sourceCode));

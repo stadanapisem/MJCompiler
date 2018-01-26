@@ -1,0 +1,6 @@
+program moj_program
+    const char a = 'z';
+    const int b = 3;
+    const bool c = false;
+    {
+    }

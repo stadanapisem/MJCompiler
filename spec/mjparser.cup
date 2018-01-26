@@ -4,6 +4,14 @@ import java_cup.runtime.*;
 import rs.ac.bg.etf.pp1.ast.*;
 import java.io.*;
 
+scan with {:
+    Symbol s = this.getScanner().next_token();
+    if (s != null && s.value != null)
+       System.err.println(s.toString() + " " + s.value.toString());
+
+    return s;
+:}
+
 // *****************  KEYWORDS **********************
 terminal PROGRAM, CONST, VOID, BREAK, CLASS, IF, ELSE, NEW, RETURN, DO, WHILE, EXTENDS;
 terminal CONTINUE, PRINT, READ;
@@ -19,32 +27,35 @@ terminal char CHAR;
 terminal String IDENT;
 
 // *****************  NONTERMINALS  *****************
-nonterminal program, program_name;
+nonterminal program; nonterminal rs.etf.pp1.symboltable.concepts.Obj program_name;
 
-nonterminal type, method_return_type;
+nonterminal method_return_type; nonterminal rs.etf.pp1.symboltable.concepts.Struct type;
 
-nonterminal declaration_list, declaration,
-            const_declaration_line, const_id_list, const_id, const_identifier, constant, numeric_const, bool_const, char_const,
+nonterminal declaration_section, declaration,
+            const_declaration_line, const_id_list, const_identifier,
             var_declaration_line, var_declaration_list, var_id_list, var_id, var_identifier,
             class_declaration, class_identifier,
             method_decl_section, optional_method_decl_section, method_decl_list, method_decl, method_identifier, method_definition,
             formal_parameter_section, formal_parameter_list, formal_parameter;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj const_id;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj constant, char_const, numeric_const, bool_const;
 
 nonterminal statement_list;
 // **************************************************
+//
 // PRODUCTIONS
 //
 // *****************  PROGRAM  **********************
-program ::= (Program) PROGRAM program_name:o declaration_list LBRACE method_decl_section RBRACE;
+program ::= (Program) PROGRAM program_name:pName declaration_section method_decl_section;
 program_name ::= (ProgramName) IDENT:id;
 
 // *****************  TYPE **************************
-type ::= (Type) IDENT:id;
+type ::= (Type) IDENT: typeName;
 method_return_type ::= (MethodReturnType) type
                      | (VoidReturnType) VOID;
 
 // *****************  DECLARATIONS ******************
-declaration_list ::= (DeclarationList) declaration_list declaration
+declaration_section ::= (DeclarationSection) declaration_section declaration
                    | (NoDeclarations) /* epsilon */;
 
   declaration ::= (DeclarationConst) const_declaration_line
@@ -56,10 +67,10 @@ declaration_list ::= (DeclarationList) declaration_list declaration
       const_id_list ::= (ConstIdList) const_id_list COMMA const_id
                       | (ConstIdTerm) const_id;
         const_id ::= (ConstId) const_identifier ASSIGN constant;
-        const_identifier ::= (ConstIdentifier) IDENT:id;
-        constant ::= (ConstNumber) numeric_const
-                   | (ConstBool) bool_const
-                   | (ConstChar) char_const;
+        const_identifier ::= (ConstIdentifier) IDENT: id;
+        constant ::= (ConstNumber) numeric_const: var
+                   | (ConstBool) bool_const: var
+                   | (ConstChar) char_const: var;
           numeric_const ::= (NumericConst) NUMBER: var;
           bool_const ::= (BoolConst) BOOL: var;
           char_const ::= (CharConst) CHAR: var;
@@ -90,7 +101,8 @@ declaration_list ::= (DeclarationList) declaration_list declaration
                                      | (NoParameters) /* epsilon */;
             formal_parameter_list ::= (FormalParameterList) formal_parameter_list COMMA formal_parameter
                                     | (FormalTermParameter) formal_parameter;
-              formal_parameter ::= (FormalParameter) type IDENT;
+              formal_parameter ::= (FormalParameter) type IDENT
+                                 | (FormalParameterArray) type IDENT LSQUARE RSQUARE;
         method_definition ::= (MethodDefinition) method_decl statement_list RBRACE;
 
 // ***************** STATEMENTS *********************

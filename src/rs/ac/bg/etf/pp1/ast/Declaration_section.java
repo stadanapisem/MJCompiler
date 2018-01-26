@@ -1,11 +1,11 @@
 // generated with ast extension for cup
 // version 0.8
-// 24/0/2018 22:42:39
+// 26/0/2018 19:57:51
 
 
 package rs.ac.bg.etf.pp1.ast;
 
-public abstract class Declaration_list implements SyntaxNode {
+public abstract class Declaration_section implements SyntaxNode {
 
     private SyntaxNode parent;
 

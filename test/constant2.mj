@@ -1,0 +1,7 @@
+program drugi
+  const int a = 1, b = 1233;
+  const char asd  = 'a',
+  ert = 'z';
+{
+
+}
