@@ -1,0 +1,4 @@
+program neki
+
+    const a = 3;
+{}

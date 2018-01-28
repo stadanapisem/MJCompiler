@@ -7,13 +7,16 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
-public class LexerTest {
+public class LexerTestMJ {
 
-    @Test public void test1() {
+    @Test public void test1() throws Exception {
         Reader br = null;
         try {
-            File sourceCode = new File("test/constant1.mj");
+            File sourceCode = new File("test/constantCorrect1.mj");
             System.out.println("Compiling source file: " + sourceCode.getAbsolutePath());
 
             br = new BufferedReader(new FileReader(sourceCode));

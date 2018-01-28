@@ -1,0 +1,4 @@
+program neki
+  int tmp, arr[];char c, c_arr[];
+  bool qwe, bul_arr[];
+  {}

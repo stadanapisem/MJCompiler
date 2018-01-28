@@ -15,9 +15,12 @@ public class Semantics extends VisitorAdaptor {
         Log4JUtils.instance().prepareLogFile(Logger.getRootLogger());
     }
 
+    boolean returnFound = false;
     private Logger logger;
-
     private Struct currentType;
+
+    private Obj currentMethod;
+    private int paramNum;
 
     public Semantics() {
         logger = Logger.getLogger(Semantics.class);
@@ -39,100 +42,32 @@ public class Semantics extends VisitorAdaptor {
         throw new Error();
     }
 
-    @Override public void visit(Declaration declaration) {
-        super.visit(declaration);
-    }
-
-    @Override public void visit(Program_name program_name) {
-        super.visit(program_name);
-    }
-
-    @Override public void visit(Constant constant) {
-        super.visit(constant);
-    }
-
-    @Override public void visit(Char_const char_const) {
-        super.visit(char_const);
-    }
-
-    @Override public void visit(Const_id_list const_id_list) {
-        super.visit(const_id_list);
-    }
-
-    @Override public void visit(Var_id_list var_id_list) {
-        super.visit(var_id_list);
-    }
-
-    @Override public void visit(Const_declaration_line const_declaration_line) {
-        super.visit(const_declaration_line);
-    }
-
-    @Override public void visit(Var_identifier var_identifier) {
-        super.visit(var_identifier);
-    }
-
-    @Override public void visit(Var_id var_id) {
-        super.visit(var_id);
-    }
-
-    @Override public void visit(DeclarationSection declarationSection) {
-        super.visit(declarationSection);
-    }
-
-    @Override public void visit(Var_declaration_line var_declaration_line) {
-        super.visit(var_declaration_line);
-    }
-
-    @Override public void visit(Const_id const_id) {
-        super.visit(const_id);
-    }
-
-    @Override public void visit(Bool_const bool_const) {
-        super.visit(bool_const);
-    }
-
-    @Override public void visit(Const_identifier const_identifier) {
-        super.visit(const_identifier);
-    }
-
-    @Override public void visit(Numeric_const numeric_const) {
-        super.visit(numeric_const);
-    }
-
-    @Override public void visit(Method_return_type method_return_type) {
-        super.visit(method_return_type);
-    }
-
-    @Override public void visit(Method_decl_list method_decl_list) {
-        super.visit(method_decl_list);
-    }
-
-    @Override public void visit(VarIdentifier VarIdentifier) {
-        super.visit(VarIdentifier);
-    }
-
     @Override public void visit(VarIDArray VarIDArray) {
-        super.visit(VarIDArray);
+        String ident = ((VarIdentifier) VarIDArray.getVar_identifier()).getId();
+
+        if (Tab.find(ident) != Tab.noObj) {
+            report_error("Line " + VarIDArray.getLine() + " Symbol already defined");
+        } else {
+            Tab.insert(Obj.Var, ident, new Struct(Struct.Array, currentType));
+
+            report_info("Line " + VarIDArray.getLine() + " Defined array variable: " + ident);
+        }
     }
 
     @Override public void visit(VarID VarID) {
-        super.visit(VarID);
-    }
+        String ident = ((VarIdentifier) VarID.getVar_identifier()).getId();
 
-    @Override public void visit(VarIDTerm VarIDTerm) {
-        super.visit(VarIDTerm);
-    }
+        if (Tab.find(ident) != Tab.noObj) {
+            report_error("Line " + VarID.getLine() + " Symbol already defined");
+        } else {
+            Tab.insert(Obj.Var, ident, currentType);
 
-    @Override public void visit(VarIDList VarIDList) {
-        super.visit(VarIDList);
-    }
-
-    @Override public void visit(VarDeclarationLine VarDeclarationLine) {
-        super.visit(VarDeclarationLine);
+            report_info("Line " + VarID.getLine() + " Defined variable: " + ident);
+        }
     }
 
     @Override public void visit(CharConst CharConst) {
-        if (currentType != Tab.charType) {
+        if (!currentType.compatibleWith(Tab.charType)) {
             report_error("Line " + CharConst.getLine() + " Wrong operand type");
         }
 
@@ -143,7 +78,7 @@ public class Semantics extends VisitorAdaptor {
     }
 
     @Override public void visit(BoolConst BoolConst) {
-        if (currentType != Tab.find("bool").getType()) {
+        if (!currentType.compatibleWith(Tab.find("bool").getType())) {
             report_error("Line " + BoolConst.getLine() + " Wrong operand type");
         }
 
@@ -152,7 +87,7 @@ public class Semantics extends VisitorAdaptor {
     }
 
     @Override public void visit(NumericConst NumericConst) {
-        if (currentType != Tab.intType) {
+        if (!currentType.compatibleWith(Tab.intType)) {
             report_error("Line " + NumericConst.getLine() + " Wrong operand type");
         }
 
@@ -196,35 +131,124 @@ public class Semantics extends VisitorAdaptor {
         }
     }
 
-    @Override public void visit(ConstIdTerm ConstIdTerm) {
-        super.visit(ConstIdTerm);
+    @Override public void visit(MethodIdentifier MethodIdentifier) {
+        if (Tab.find(MethodIdentifier.getId()) != Tab.noObj) {
+            report_error("Line " + MethodIdentifier.getLine() + " Symbol already defined!");
+        }
+
+        MethodIdentifier.obj = Tab.insert(Obj.Meth, MethodIdentifier.getId(),
+            ((MethodReturnType) MethodIdentifier.getMethod_return_type()).getType().struct);
+        currentMethod = MethodIdentifier.obj;
+        Tab.openScope();
+        returnFound = false;
+        paramNum = 1;
+
+        report_info(
+            "Line " + MethodIdentifier.getLine() + " Found method " + MethodIdentifier.getId());
     }
 
-    @Override public void visit(ConstIdList ConstIdList) {
-        super.visit(ConstIdList);
+    @Override public void visit(FormalParameter FormalParameter) {
+        Tab.currentScope().addToLocals(
+            new Obj(Obj.Var, FormalParameter.getI2(), FormalParameter.getType().struct, 0,
+                paramNum++));
     }
 
-    @Override public void visit(ConstDeclarationLine ConstDeclarationLine) {
+    @Override public void visit(FormalParameterArray FormalParameterArray) {
+        Tab.currentScope().addToLocals(new Obj(Obj.Var, FormalParameterArray.getI2(),
+            new Struct(Struct.Array, FormalParameterArray.getType().struct), 0, paramNum++));
     }
 
-    @Override public void visit(DeclarationVar DeclarationVar) {
-        super.visit(DeclarationVar);
+    @Override public void visit(MethodDefinition MethodDefinition) {
+        if (!returnFound && currentMethod.getType() != Tab.noType) {
+            report_error("Line " + MethodDefinition.getLine() + " method missing return statement");
+        }
+
+        Tab.chainLocalSymbols(currentMethod);
+        Tab.closeScope();
+
+        currentMethod = null;
+        returnFound = false;
+        paramNum = 0;
+        report_debug("Line " + MethodDefinition.getLine() + " Method definition complete");
     }
 
-    @Override public void visit(DeclarationConst DeclarationConst) {
-        super.visit(DeclarationConst);
+    @Override public void visit(ReturnStatement ReturnStatement) {
+        if (!currentMethod.getType().compatibleWith(ReturnStatement.getExpression().struct)) {
+            report_error(
+                "Line " + ReturnStatement.getLine() + " Wrong operand type in return statement");
+        }
+
+        returnFound = true;
+        report_debug("Line " + ReturnStatement.getLine() + " found return");
     }
 
-    @Override public void visit(NoDeclarations NoDeclarations) {
-        super.visit(NoDeclarations);
+    @Override public void visit(ConstantFactor ConstantFactor) {
+        ConstantFactor.struct = ConstantFactor.getConstant().obj.getType();
+        //report_debug("Line " + ConstantFactor.getLine() + " found constant factor");
     }
 
-    @Override public void visit(VoidReturnType VoidReturnType) {
-        super.visit(VoidReturnType);
+    @Override public void visit(ConstructorFactor ConstructorFactor) {
+        ConstructorFactor.struct = ConstructorFactor.getType().struct;
+        //report_debug("Line " + ConstructorFactor.getLine() + " found constructor factor");
     }
 
-    @Override public void visit(MethodReturnType MethodReturnType) {
-        super.visit(MethodReturnType);
+    @Override public void visit(ConstructorArrayFactor ConstructorArrayFactor) {
+        ConstructorArrayFactor.struct = ConstructorArrayFactor.getType().struct;
+        //report_debug(
+        //    "Line " + ConstructorArrayFactor.getLine() + " found array constructor factor");
+    }
+
+    @Override public void visit(ExpressionFactor ExpressionFactor) {
+        ExpressionFactor.struct = ExpressionFactor.getExpression().struct;
+        //report_debug("Line " + ExpressionFactor.getLine() + " found expression factor");
+    }
+
+    @Override public void visit(AddExpression AddExpression) {
+        AddExpression.struct = (AddExpression.getAddition_term_list()).struct;
+        //report_debug("Line " + AddExpression.getLine() + " found add expression");
+    }
+
+    @Override public void visit(Term Term) {
+        Term.struct = Term.getMultiplication_factor_list().struct;
+    }
+
+    @Override public void visit(FactorList FactorList) {
+        if (!FactorList.getFactor().struct
+            .compatibleWith(FactorList.getMultiplication_factor_list().struct)) {
+            report_error("Line " + FactorList.getLine() + " Types not compatible");
+        }
+
+        FactorList.struct = FactorList.getMultiplication_factor_list().struct;
+    }
+
+    @Override public void visit(TerminalFactor TerminalFactor) {
+        TerminalFactor.struct = TerminalFactor.getFactor().struct;
+    }
+
+    @Override public void visit(TermList TermList) {
+        if (!TermList.getTerm().struct.compatibleWith(TermList.getAddition_term_list().struct)) {
+            report_error("Line " + TermList.getLine() + " Types not compatible");
+        }
+
+        TermList.struct = TermList.getAddition_term_list().struct;
+    }
+
+    @Override public void visit(TerminalTerm TerminalTerm) {
+        TerminalTerm.struct = TerminalTerm.getTerm().struct;
+    }
+
+    @Override public void visit(NegTerminalTerm NegTerminalTerm) {
+        NegTerminalTerm.struct = NegTerminalTerm.getTerm().struct;
+    }
+
+    @Override public void visit(Designator Designator) {
+        Obj tmp = Tab.find(Designator.getId());
+        if (tmp == Tab.noObj) {
+            report_error(
+                "Line " + Designator.getLine() + " name " + Designator.getId() + " not declared");
+        }
+
+        Designator.obj = tmp;
     }
 
     @Override public void visit(Type Type) {

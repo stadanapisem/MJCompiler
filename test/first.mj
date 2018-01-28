@@ -1,8 +1,0 @@
-program asdas
- // commmmmmentar
-{
- void main() {
-    int var = 3;
-    bool niz[3] = {true, false, false};
- }
-}

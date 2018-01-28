@@ -1,0 +1,8 @@
+program neki
+
+{
+    int method()
+    {
+        return 'a';
+    }
+}

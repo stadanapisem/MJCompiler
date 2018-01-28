@@ -1,42 +1,83 @@
 // generated with ast extension for cup
 // version 0.8
-// 26/0/2018 19:57:51
+// 28/0/2018 21:0:58
 
 
 package rs.ac.bg.etf.pp1.ast;
 
 public abstract class VisitorAdaptor implements Visitor { 
 
-    public void visit(Declaration declaration) { }
-    public void visit(Formal_parameter_section formal_parameter_section) { }
-    public void visit(Constant constant) { }
-    public void visit(Program_name program_name) { }
-    public void visit(Class_declaration class_declaration) { }
-    public void visit(Formal_parameter_list formal_parameter_list) { }
-    public void visit(Method_decl method_decl) { }
-    public void visit(Char_const char_const) { }
-    public void visit(Const_id_list const_id_list) { }
-    public void visit(Var_id_list var_id_list) { }
-    public void visit(Method_identifier method_identifier) { }
-    public void visit(Const_declaration_line const_declaration_line) { }
-    public void visit(Var_id var_id) { }
-    public void visit(Var_identifier var_identifier) { }
-    public void visit(Statement_list statement_list) { }
-    public void visit(Method_decl_section method_decl_section) { }
+    public void visit(Method_return_type method_return_type) { }
+    public void visit(Read_statement read_statement) { }
     public void visit(Method_definition method_definition) { }
-    public void visit(Var_declaration_line var_declaration_line) { }
+    public void visit(Const_identifier const_identifier) { }
+    public void visit(Method_decl_list method_decl_list) { }
+    public void visit(Const_declaration_line const_declaration_line) { }
+    public void visit(Var_identifier var_identifier) { }
+    public void visit(Method_identifier method_identifier) { }
+    public void visit(Const_id_list const_id_list) { }
+    public void visit(Class_identifier class_identifier) { }
+    public void visit(Formal_parameter formal_parameter) { }
+    public void visit(Declaration_section declaration_section) { }
+    public void visit(Method_decl_section method_decl_section) { }
+    public void visit(Print_statement print_statement) { }
+    public void visit(Designator_statement designator_statement) { }
+    public void visit(Formal_parameter_list formal_parameter_list) { }
+    public void visit(Expression expression) { }
+    public void visit(Multiplication_operator multiplication_operator) { }
     public void visit(Optional_method_decl_section optional_method_decl_section) { }
+    public void visit(Statement statement) { }
+    public void visit(Var_declaration_line var_declaration_line) { }
+    public void visit(Constant constant) { }
+    public void visit(Return_statement return_statement) { }
     public void visit(Bool_const bool_const) { }
     public void visit(Const_id const_id) { }
-    public void visit(Formal_parameter formal_parameter) { }
-    public void visit(Const_identifier const_identifier) { }
-    public void visit(Declaration_section declaration_section) { }
-    public void visit(Class_identifier class_identifier) { }
-    public void visit(Numeric_const numeric_const) { }
-    public void visit(Method_return_type method_return_type) { }
-    public void visit(Method_decl_list method_decl_list) { }
+    public void visit(Class_declaration class_declaration) { }
+    public void visit(Addition_term_list addition_term_list) { }
     public void visit(Var_declaration_list var_declaration_list) { }
-    public void visit(Statement_listDerived1 Statement_listDerived1) { visit(); }
+    public void visit(Char_const char_const) { }
+    public void visit(Program_name program_name) { }
+    public void visit(Numeric_const numeric_const) { }
+    public void visit(Formal_parameter_section formal_parameter_section) { }
+    public void visit(Multiplication_factor_list multiplication_factor_list) { }
+    public void visit(Var_id var_id) { }
+    public void visit(Addition_operator addition_operator) { }
+    public void visit(Factor factor) { }
+    public void visit(Declaration declaration) { }
+    public void visit(Method_decl method_decl) { }
+    public void visit(Statement_list statement_list) { }
+    public void visit(Var_id_list var_id_list) { }
+    public void visit(ConstructorArrayFactor ConstructorArrayFactor) { visit(); }
+    public void visit(ConstructorFactor ConstructorFactor) { visit(); }
+    public void visit(ExpressionFactor ExpressionFactor) { visit(); }
+    public void visit(ConstantFactor ConstantFactor) { visit(); }
+    public void visit(Multiplication_operatorDerived3 Multiplication_operatorDerived3) { visit(); }
+    public void visit(Multiplication_operatorDerived2 Multiplication_operatorDerived2) { visit(); }
+    public void visit(Multiplication_operatorDerived1 Multiplication_operatorDerived1) { visit(); }
+    public void visit(TerminalFactor TerminalFactor) { visit(); }
+    public void visit(FactorList FactorList) { visit(); }
+    public void visit(Term Term) { visit(); }
+    public void visit(Addition_operatorDerived2 Addition_operatorDerived2) { visit(); }
+    public void visit(Addition_operatorDerived1 Addition_operatorDerived1) { visit(); }
+    public void visit(NegTerminalTerm NegTerminalTerm) { visit(); }
+    public void visit(TerminalTerm TerminalTerm) { visit(); }
+    public void visit(TermList TermList) { visit(); }
+    public void visit(SimpleExpression SimpleExpression) { visit(); }
+    public void visit(AddExpression AddExpression) { visit(); }
+    public void visit(Designator Designator) { visit(); }
+    public void visit(Decrement Decrement) { visit(); }
+    public void visit(Increment Increment) { visit(); }
+    public void visit(Assignment Assignment) { visit(); }
+    public void visit(ComplexPrintStatement ComplexPrintStatement) { visit(); }
+    public void visit(PrintStatement PrintStatement) { visit(); }
+    public void visit(ReadStatement ReadStatement) { visit(); }
+    public void visit(ReturnStatement ReturnStatement) { visit(); }
+    public void visit(StatementDerived4 StatementDerived4) { visit(); }
+    public void visit(StatementDerived3 StatementDerived3) { visit(); }
+    public void visit(StatementDerived2 StatementDerived2) { visit(); }
+    public void visit(StatementDerived1 StatementDerived1) { visit(); }
+    public void visit(NoStatements NoStatements) { visit(); }
+    public void visit(StatementList StatementList) { visit(); }
     public void visit(MethodDefinition MethodDefinition) { visit(); }
     public void visit(FormalParameterArray FormalParameterArray) { visit(); }
     public void visit(FormalParameter FormalParameter) { visit(); }
@@ -58,9 +99,9 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(VarID VarID) { visit(); }
     public void visit(VarIDTerm VarIDTerm) { visit(); }
     public void visit(VarIDList VarIDList) { visit(); }
+    public void visit(VarDeclarationLine VarDeclarationLine) { visit(); }
     public void visit(NoVariableDeclarations NoVariableDeclarations) { visit(); }
     public void visit(VarDeclarationList VarDeclarationList) { visit(); }
-    public void visit(VarDeclarationLine VarDeclarationLine) { visit(); }
     public void visit(CharConst CharConst) { visit(); }
     public void visit(BoolConst BoolConst) { visit(); }
     public void visit(NumericConst NumericConst) { visit(); }

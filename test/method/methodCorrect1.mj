@@ -1,0 +1,10 @@
+program neki
+  {
+     int method(int x, bool b[])
+         int asd;
+     {
+        asd = (5 * 2);
+        x = new int[2 + 5 * 4];
+        return 0;
+     }
+  }

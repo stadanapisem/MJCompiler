@@ -1,13 +1,13 @@
 // generated with ast extension for cup
 // version 0.8
-// 26/0/2018 19:57:51
+// 28/0/2018 21:0:58
 
 
 package rs.ac.bg.etf.pp1.ast;
 
-public class Statement_listDerived1 extends Statement_list {
+public class Multiplication_operatorDerived1 extends Multiplication_operator {
 
-    public Statement_listDerived1 () {
+    public Multiplication_operatorDerived1 () {
     }
 
     public void accept(Visitor visitor) {
@@ -28,10 +28,10 @@ public class Statement_listDerived1 extends Statement_list {
     public String toString(String tab) {
         StringBuffer buffer=new StringBuffer();
         buffer.append(tab);
-        buffer.append("Statement_listDerived1(\n");
+        buffer.append("Multiplication_operatorDerived1(\n");
 
         buffer.append(tab);
-        buffer.append(") [Statement_listDerived1]");
+        buffer.append(") [Multiplication_operatorDerived1]");
         return buffer.toString();
     }
 }

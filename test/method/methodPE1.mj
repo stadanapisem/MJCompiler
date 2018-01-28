@@ -1,0 +1,9 @@
+program neki
+
+{
+    method(int asd)
+
+    {
+        return 0;
+    }
+}

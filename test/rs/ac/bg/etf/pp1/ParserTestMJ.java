@@ -9,11 +9,11 @@ import rs.etf.pp1.symboltable.Tab;
 import java.io.File;
 import java.io.FileReader;
 
-public class ParserTest {
+public class ParserTestMJ {
 
     @Test
     public void testSimple() {
-        File source = new File("test/constant2.mj");
+        File source = new File("test/constant/constantPE1.mj");
 
         Assert.assertTrue(source.getAbsolutePath(), source.exists());
 
