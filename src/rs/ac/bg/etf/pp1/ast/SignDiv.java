@@ -1,13 +1,13 @@
 // generated with ast extension for cup
 // version 0.8
-// 28/0/2018 21:0:58
+// 30/0/2018 19:5:1
 
 
 package rs.ac.bg.etf.pp1.ast;
 
-public class Addition_operatorDerived2 extends Addition_operator {
+public class SignDiv extends Multiplication_operator {
 
-    public Addition_operatorDerived2 () {
+    public SignDiv () {
     }
 
     public void accept(Visitor visitor) {
@@ -28,10 +28,10 @@ public class Addition_operatorDerived2 extends Addition_operator {
     public String toString(String tab) {
         StringBuffer buffer=new StringBuffer();
         buffer.append(tab);
-        buffer.append("Addition_operatorDerived2(\n");
+        buffer.append("SignDiv(\n");
 
         buffer.append(tab);
-        buffer.append(") [Addition_operatorDerived2]");
+        buffer.append(") [SignDiv]");
         return buffer.toString();
     }
 }

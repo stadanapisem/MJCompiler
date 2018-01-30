@@ -1,29 +1,17 @@
 // generated with ast extension for cup
 // version 0.8
-// 28/0/2018 21:0:58
+// 30/0/2018 19:5:1
 
 
 package rs.ac.bg.etf.pp1.ast;
 
-public class Designator implements SyntaxNode {
+public abstract class Designator implements SyntaxNode {
 
     private SyntaxNode parent;
+
     private int line;
+
     public rs.etf.pp1.symboltable.concepts.Obj obj = null;
-
-    private String id;
-
-    public Designator (String id) {
-        this.id=id;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id=id;
-    }
 
     public SyntaxNode getParent() {
         return parent;
@@ -41,31 +29,11 @@ public class Designator implements SyntaxNode {
         this.line=line;
     }
 
-    public void accept(Visitor visitor) {
-        visitor.visit(this);
-    }
+    public abstract void accept(Visitor visitor);
+    public abstract void childrenAccept(Visitor visitor);
+    public abstract void traverseTopDown(Visitor visitor);
+    public abstract void traverseBottomUp(Visitor visitor);
 
-    public void childrenAccept(Visitor visitor) {
-    }
-
-    public void traverseTopDown(Visitor visitor) {
-        accept(visitor);
-    }
-
-    public void traverseBottomUp(Visitor visitor) {
-        accept(visitor);
-    }
-
-    public String toString(String tab) {
-        StringBuffer buffer=new StringBuffer();
-        buffer.append(tab);
-        buffer.append("Designator(\n");
-
-        buffer.append(" "+tab+id);
-        buffer.append("\n");
-
-        buffer.append(tab);
-        buffer.append(") [Designator]");
-        return buffer.toString();
-    }
+    public String toString() { return toString(""); }
+    public abstract String toString(String tab);
 }

@@ -1,0 +1,17 @@
+program saban
+    int asd;
+{
+    void main()
+        int qwe, zxc;
+        char c;
+    {
+        qwe = 45;
+        zxc = qwe % 10;
+        asd = 1 - (qwe - zxc) * 2;
+        print(asd);
+        print(qwe, 11);
+
+        c = 'a' + 'b';
+        print(c);
+    }
+}

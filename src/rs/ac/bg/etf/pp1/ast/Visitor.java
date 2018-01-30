@@ -1,12 +1,13 @@
 // generated with ast extension for cup
 // version 0.8
-// 28/0/2018 21:0:58
+// 30/0/2018 19:5:1
 
 
 package rs.ac.bg.etf.pp1.ast;
 
 public interface Visitor { 
 
+    public void visit(Designator designator);
     public void visit(Method_return_type method_return_type);
     public void visit(Read_statement read_statement);
     public void visit(Method_definition method_definition);
@@ -47,24 +48,26 @@ public interface Visitor {
     public void visit(Method_decl method_decl);
     public void visit(Statement_list statement_list);
     public void visit(Var_id_list var_id_list);
+    public void visit(DesignatorFactor DesignatorFactor);
     public void visit(ConstructorArrayFactor ConstructorArrayFactor);
     public void visit(ConstructorFactor ConstructorFactor);
     public void visit(ExpressionFactor ExpressionFactor);
     public void visit(ConstantFactor ConstantFactor);
-    public void visit(Multiplication_operatorDerived3 Multiplication_operatorDerived3);
-    public void visit(Multiplication_operatorDerived2 Multiplication_operatorDerived2);
-    public void visit(Multiplication_operatorDerived1 Multiplication_operatorDerived1);
+    public void visit(SignMod SignMod);
+    public void visit(SignDiv SignDiv);
+    public void visit(SignMul SignMul);
     public void visit(TerminalFactor TerminalFactor);
     public void visit(FactorList FactorList);
     public void visit(Term Term);
-    public void visit(Addition_operatorDerived2 Addition_operatorDerived2);
-    public void visit(Addition_operatorDerived1 Addition_operatorDerived1);
+    public void visit(SignSub SignSub);
+    public void visit(SignAdd SignAdd);
     public void visit(NegTerminalTerm NegTerminalTerm);
     public void visit(TerminalTerm TerminalTerm);
     public void visit(TermList TermList);
     public void visit(SimpleExpression SimpleExpression);
     public void visit(AddExpression AddExpression);
-    public void visit(Designator Designator);
+    public void visit(DesignatorArray DesignatorArray);
+    public void visit(DesignatorSingle DesignatorSingle);
     public void visit(Decrement Decrement);
     public void visit(Increment Increment);
     public void visit(Assignment Assignment);

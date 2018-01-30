@@ -82,6 +82,18 @@
         </junitreport>
     </target>
 
+    <target name="run-vm">
+        <java classpath="${lib.dir}/mj-runtime.jar" classname="rs.etf.pp1.mj.runtime.Run" fork="true" failonerror="true">
+            <arg line="${test.file}" />
+        </java>
+    </target>
+
+    <target name="run-dissasm">
+        <java classpath="${lib.dir}/mj-runtime.jar" classname="rs.etf.pp1.mj.runtime.disasm" fork="true" failonerror="true">
+            <arg line="${test.file}" />
+        </java>
+    </target>
+
     <target name="javadoc">
         <javadoc packagenames="${packages}" sourcepath="${src.dir}" destdir="${javadoc.dir}"
                  classpath="${src.dir}" author="true" version="true" use="true"

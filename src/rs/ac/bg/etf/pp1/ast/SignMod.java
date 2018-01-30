@@ -1,13 +1,13 @@
 // generated with ast extension for cup
 // version 0.8
-// 28/0/2018 21:0:58
+// 30/0/2018 19:5:1
 
 
 package rs.ac.bg.etf.pp1.ast;
 
-public class Multiplication_operatorDerived2 extends Multiplication_operator {
+public class SignMod extends Multiplication_operator {
 
-    public Multiplication_operatorDerived2 () {
+    public SignMod () {
     }
 
     public void accept(Visitor visitor) {
@@ -28,10 +28,10 @@ public class Multiplication_operatorDerived2 extends Multiplication_operator {
     public String toString(String tab) {
         StringBuffer buffer=new StringBuffer();
         buffer.append(tab);
-        buffer.append("Multiplication_operatorDerived2(\n");
+        buffer.append("SignMod(\n");
 
         buffer.append(tab);
-        buffer.append(") [Multiplication_operatorDerived2]");
+        buffer.append(") [SignMod]");
         return buffer.toString();
     }
 }

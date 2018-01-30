@@ -1,12 +1,13 @@
 // generated with ast extension for cup
 // version 0.8
-// 28/0/2018 21:0:58
+// 30/0/2018 19:5:1
 
 
 package rs.ac.bg.etf.pp1.ast;
 
 public abstract class VisitorAdaptor implements Visitor { 
 
+    public void visit(Designator designator) { }
     public void visit(Method_return_type method_return_type) { }
     public void visit(Read_statement read_statement) { }
     public void visit(Method_definition method_definition) { }
@@ -47,24 +48,26 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(Method_decl method_decl) { }
     public void visit(Statement_list statement_list) { }
     public void visit(Var_id_list var_id_list) { }
+    public void visit(DesignatorFactor DesignatorFactor) { visit(); }
     public void visit(ConstructorArrayFactor ConstructorArrayFactor) { visit(); }
     public void visit(ConstructorFactor ConstructorFactor) { visit(); }
     public void visit(ExpressionFactor ExpressionFactor) { visit(); }
     public void visit(ConstantFactor ConstantFactor) { visit(); }
-    public void visit(Multiplication_operatorDerived3 Multiplication_operatorDerived3) { visit(); }
-    public void visit(Multiplication_operatorDerived2 Multiplication_operatorDerived2) { visit(); }
-    public void visit(Multiplication_operatorDerived1 Multiplication_operatorDerived1) { visit(); }
+    public void visit(SignMod SignMod) { visit(); }
+    public void visit(SignDiv SignDiv) { visit(); }
+    public void visit(SignMul SignMul) { visit(); }
     public void visit(TerminalFactor TerminalFactor) { visit(); }
     public void visit(FactorList FactorList) { visit(); }
     public void visit(Term Term) { visit(); }
-    public void visit(Addition_operatorDerived2 Addition_operatorDerived2) { visit(); }
-    public void visit(Addition_operatorDerived1 Addition_operatorDerived1) { visit(); }
+    public void visit(SignSub SignSub) { visit(); }
+    public void visit(SignAdd SignAdd) { visit(); }
     public void visit(NegTerminalTerm NegTerminalTerm) { visit(); }
     public void visit(TerminalTerm TerminalTerm) { visit(); }
     public void visit(TermList TermList) { visit(); }
     public void visit(SimpleExpression SimpleExpression) { visit(); }
     public void visit(AddExpression AddExpression) { visit(); }
-    public void visit(Designator Designator) { visit(); }
+    public void visit(DesignatorArray DesignatorArray) { visit(); }
+    public void visit(DesignatorSingle DesignatorSingle) { visit(); }
     public void visit(Decrement Decrement) { visit(); }
     public void visit(Increment Increment) { visit(); }
     public void visit(Assignment Assignment) { visit(); }

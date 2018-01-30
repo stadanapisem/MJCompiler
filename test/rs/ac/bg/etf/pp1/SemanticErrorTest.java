@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
             Symbol s = parser.parse();
             SyntaxNode prog = (SyntaxNode) (s.value);
 
-            Semantics visitor = new Semantics();
+            SemanticAnalyzer visitor = new SemanticAnalyzer();
             prog.traverseBottomUp(visitor);
 
             Tab.dump();

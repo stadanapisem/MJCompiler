@@ -1,0 +1,14 @@
+program saban
+    int asd;
+{
+    void main()
+        int qwe;
+    {
+        asd = 0;
+        asd ++;
+        qwe = 123;
+        qwe --;
+        print(qwe);
+        print(asd, 10);
+    }
+}

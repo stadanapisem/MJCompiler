@@ -2,7 +2,6 @@ package rs.ac.bg.etf.pp1;
 
 import java_cup.runtime.*;
 import rs.ac.bg.etf.pp1.ast.*;
-import java.io.*;
 
 scan with {:
     Symbol s = this.getScanner().next_token();
@@ -29,7 +28,7 @@ terminal String IDENT;
 // *****************  NONTERMINALS  *****************
 nonterminal Program program; nonterminal rs.etf.pp1.symboltable.concepts.Obj program_name;
 
-nonterminal Method_return_type method_return_type; nonterminal rs.etf.pp1.symboltable.concepts.Struct type;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct type, method_return_type;
 
 nonterminal Declaration_section declaration_section;
 nonterminal Declaration declaration;
@@ -66,8 +65,7 @@ nonterminal Read_statement read_statement;
 nonterminal Return_statement return_statement;
 nonterminal Designator_statement designator_statement;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj designator;
-nonterminal Addition_operator addition_operator;
-nonterminal Multiplication_operator multiplication_operator;
+nonterminal java.lang.String addition_operator, multiplication_operator;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct term, factor, expression, addition_term_list, multiplication_factor_list;
 // **************************************************
 //
@@ -138,34 +136,36 @@ statement_list ::= (StatementList) statement_list:s1 statement:s2 {: RESULT=new 
                  | (NoStatements) {: RESULT=new NoStatements(); :} /* epsilon */;
   statement ::= designator_statement:d1 SEMI {: RESULT=new StatementDerived1(d1); RESULT.setLine(d1left); :}
               | read_statement:r1 SEMI {: RESULT=new StatementDerived2(r1); RESULT.setLine(r1left); :}
-              |  print_statement:p1 SEMI {: RESULT=new StatementDerived3(p1); RESULT.setLine(p1left); :}
+              | print_statement:p1 SEMI {: RESULT=new StatementDerived3(p1); RESULT.setLine(p1left); :}
               | return_statement:r1 SEMI {: RESULT=new StatementDerived4(r1); RESULT.setLine(r1left); :};
     return_statement ::= (ReturnStatement) RETURN expression:e1 {: RESULT=new ReturnStatement(e1); RESULT.setLine(e1left); :};
-    read_statement ::= (ReadStatement) READ LBRACE designator:d1 RBRACE {: RESULT=new ReadStatement(d1); RESULT.setLine(d1left); :};
-    print_statement ::= (PrintStatement) PRINT LBRACE expression:e1 RBRACE {: RESULT=new PrintStatement(e1); RESULT.setLine(e1left); :}
-                      | (ComplexPrintStatement) PRINT LBRACE expression:e1 COMMA numeric_const:n2 RBRACE {: RESULT=new ComplexPrintStatement(e1, n2); RESULT.setLine(e1left); :};
+    read_statement ::= (ReadStatement) READ LPAREN designator:d1 RPAREN {: RESULT=new ReadStatement(d1); RESULT.setLine(d1left); :};
+    print_statement ::= (PrintStatement) PRINT LPAREN expression:e1 RPAREN {: RESULT=new PrintStatement(e1); RESULT.setLine(e1left); :}
+                      | (ComplexPrintStatement) PRINT LPAREN expression:e1 COMMA numeric_const:n2 RPAREN {: RESULT=new ComplexPrintStatement(e1, n2); RESULT.setLine(e1left); :};
 
 // ***************** DESIGNATORS ********************
 designator_statement ::= (Assignment) designator:d1 ASSIGN expression:e2 {: RESULT=new Assignment(d1, e2); RESULT.setLine(d1left); :}
                        | (Increment) designator:d1 INC {: RESULT=new Increment(d1); RESULT.setLine(d1left); :}
                        | (Decrement) designator:d1 DEC {: RESULT=new Decrement(d1); RESULT.setLine(d1left); :};
-  designator ::= (Designator) IDENT:id {: RESULT=new Designator(id); RESULT.setLine(idleft); :};
+  designator ::= (DesignatorSingle) IDENT: id {: RESULT=new DesignatorSingle(id); RESULT.setLine(idleft); :}
+               | (DesignatorArray) IDENT: id LSQUARE expression:e1 RSQUARE {: RESULT=new DesignatorArray(id, e1); RESULT.setLine(idleft); :};
 
 // ***************** EXPRESSIONS ********************
 expression ::= (AddExpression) addition_term_list:a1 {: RESULT=new AddExpression(a1); RESULT.setLine(a1left); :}
-             | (SimpleExpression) designator:d1 LBRACE RBRACE {: RESULT=new SimpleExpression(d1); RESULT.setLine(d1left); :};
+             | (SimpleExpression) designator:d1 LPAREN RPAREN {: RESULT=new SimpleExpression(d1); RESULT.setLine(d1left); :};
   addition_term_list ::= (TermList) addition_term_list:a1 addition_operator:a2 term:t3 {: RESULT=new TermList(a1, a2, t3); RESULT.setLine(a1left); :}
                        | (TerminalTerm) term:t1 {: RESULT=new TerminalTerm(t1); RESULT.setLine(t1left); :}
                        | (NegTerminalTerm) MINUS term:t1 {: RESULT=new NegTerminalTerm(t1); RESULT.setLine(t1left); :};
-    addition_operator ::= PLUS {: RESULT=new Addition_operatorDerived1(); :}
-                        | MINUS {: RESULT=new Addition_operatorDerived2(); :};
+    addition_operator ::= (SignAdd) PLUS: op {: RESULT=new SignAdd(); :}
+                        | (SignSub) MINUS: op {: RESULT=new SignSub(); :};
   term ::= (Term) multiplication_factor_list:m1 {: RESULT=new Term(m1); RESULT.setLine(m1left); :};
   multiplication_factor_list ::= (FactorList) multiplication_factor_list:m1 multiplication_operator:m2 factor:f3 {: RESULT=new FactorList(m1, m2, f3); RESULT.setLine(m1left); :}
                                | (TerminalFactor) factor:f1 {: RESULT=new TerminalFactor(f1); RESULT.setLine(f1left); :};
-    multiplication_operator ::= MUL {: RESULT=new Multiplication_operatorDerived1(); :}
-                              | DIV {: RESULT=new Multiplication_operatorDerived2(); :}
-                              | MOD {: RESULT=new Multiplication_operatorDerived3(); :};
+    multiplication_operator ::= (SignMul) MUL: op {: RESULT=new SignMul(); :}
+                              | (SignDiv) DIV: op {: RESULT=new SignDiv(); :}
+                              | (SignMod) MOD: op {: RESULT=new SignMod(); :};
   factor ::= (ConstantFactor) constant:c1 {: RESULT=new ConstantFactor(c1); RESULT.setLine(c1left); :}
            | (ExpressionFactor) LPAREN expression:e1 RPAREN {: RESULT=new ExpressionFactor(e1); RESULT.setLine(e1left); :}
            | (ConstructorFactor) NEW type:t1 {: RESULT=new ConstructorFactor(t1); RESULT.setLine(t1left); :}
-           | (ConstructorArrayFactor) NEW type:t1 LSQUARE expression:e2 RSQUARE {: RESULT=new ConstructorArrayFactor(t1, e2); RESULT.setLine(t1left); :};
+           | (ConstructorArrayFactor) NEW type:t1 LSQUARE expression:e2 RSQUARE {: RESULT=new ConstructorArrayFactor(t1, e2); RESULT.setLine(t1left); :}
+           | (DesignatorFactor) designator:d1 {: RESULT=new DesignatorFactor(d1); RESULT.setLine(d1left); :};

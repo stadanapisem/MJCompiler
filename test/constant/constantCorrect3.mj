@@ -1,0 +1,10 @@
+program neki
+
+{
+    void main()
+     char c;
+    {
+        c = 'a';
+        print(2);
+    }
+}

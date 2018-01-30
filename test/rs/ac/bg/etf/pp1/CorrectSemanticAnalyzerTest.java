@@ -15,7 +15,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@RunWith(Parameterized.class) public class CorrectSemanticsTest {
+@RunWith(Parameterized.class) public class CorrectSemanticAnalyzerTest {
 
     @Parameterized.Parameter(0) public String filePath;
 
@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
             Symbol s = parser.parse();
             SyntaxNode prog = (SyntaxNode) (s.value);
 
-            Semantics visitor = new Semantics();
+            SemanticAnalyzer visitor = new SemanticAnalyzer();
             prog.traverseBottomUp(visitor);
 
             Tab.dump();

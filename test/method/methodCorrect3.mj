@@ -1,0 +1,14 @@
+program sapke
+
+{
+    void main()
+      int a;
+      char c;
+      bool b;
+
+      {
+          read(a);
+          read(c);
+          read(b);
+      }
+}

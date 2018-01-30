@@ -1,0 +1,9 @@
+program saban
+    const char s = 'S';
+{
+    void main()
+      char c;
+    {
+        print('c', 100);
+    }
+}

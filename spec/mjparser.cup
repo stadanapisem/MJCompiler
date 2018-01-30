@@ -2,7 +2,6 @@ package rs.ac.bg.etf.pp1;
 
 import java_cup.runtime.*;
 import rs.ac.bg.etf.pp1.ast.*;
-import java.io.*;
 
 scan with {:
     Symbol s = this.getScanner().next_token();
@@ -29,7 +28,7 @@ terminal String IDENT;
 // *****************  NONTERMINALS  *****************
 nonterminal program; nonterminal rs.etf.pp1.symboltable.concepts.Obj program_name;
 
-nonterminal method_return_type; nonterminal rs.etf.pp1.symboltable.concepts.Struct type;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct type, method_return_type;
 
 nonterminal declaration_section, declaration,
             const_declaration_line, const_id_list, const_identifier,
@@ -43,7 +42,7 @@ nonterminal rs.etf.pp1.symboltable.concepts.Obj constant, char_const, numeric_co
 nonterminal statement_list, statement, print_statement, read_statement, return_statement;
 nonterminal designator_statement;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj designator;
-nonterminal addition_operator, multiplication_operator;
+nonterminal java.lang.String addition_operator, multiplication_operator;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct term, factor, expression, addition_term_list, multiplication_factor_list;
 // **************************************************
 //
@@ -114,34 +113,36 @@ statement_list ::= (StatementList) statement_list statement
                  | (NoStatements) /* epsilon */;
   statement ::= designator_statement SEMI
               | read_statement SEMI
-              |  print_statement SEMI
+              | print_statement SEMI
               | return_statement SEMI;
     return_statement ::= (ReturnStatement) RETURN expression;
-    read_statement ::= (ReadStatement) READ LBRACE designator RBRACE;
-    print_statement ::= (PrintStatement) PRINT LBRACE expression RBRACE
-                      | (ComplexPrintStatement) PRINT LBRACE expression COMMA numeric_const RBRACE;
+    read_statement ::= (ReadStatement) READ LPAREN designator RPAREN;
+    print_statement ::= (PrintStatement) PRINT LPAREN expression RPAREN
+                      | (ComplexPrintStatement) PRINT LPAREN expression COMMA numeric_const RPAREN;
 
 // ***************** DESIGNATORS ********************
 designator_statement ::= (Assignment) designator ASSIGN expression
                        | (Increment) designator INC
                        | (Decrement) designator DEC;
-  designator ::= (Designator) IDENT:id;
+  designator ::= (DesignatorSingle) IDENT: id
+               | (DesignatorArray) IDENT: id LSQUARE expression RSQUARE;
 
 // ***************** EXPRESSIONS ********************
 expression ::= (AddExpression) addition_term_list
-             | (SimpleExpression) designator LBRACE RBRACE;
+             | (SimpleExpression) designator LPAREN RPAREN;
   addition_term_list ::= (TermList) addition_term_list addition_operator term
                        | (TerminalTerm) term
                        | (NegTerminalTerm) MINUS term;
-    addition_operator ::= PLUS
-                        | MINUS;
+    addition_operator ::= (SignAdd) PLUS: op
+                        | (SignSub) MINUS: op;
   term ::= (Term) multiplication_factor_list;
   multiplication_factor_list ::= (FactorList) multiplication_factor_list multiplication_operator factor
                                | (TerminalFactor) factor;
-    multiplication_operator ::= MUL
-                              | DIV
-                              | MOD;
+    multiplication_operator ::= (SignMul) MUL: op
+                              | (SignDiv) DIV: op
+                              | (SignMod) MOD: op;
   factor ::= (ConstantFactor) constant
            | (ExpressionFactor) LPAREN expression RPAREN
            | (ConstructorFactor) NEW type
-           | (ConstructorArrayFactor) NEW type LSQUARE expression RSQUARE;
+           | (ConstructorArrayFactor) NEW type LSQUARE expression RSQUARE
+           | (DesignatorFactor) designator;

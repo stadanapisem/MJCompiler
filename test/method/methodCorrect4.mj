@@ -1,0 +1,10 @@
+program saban
+
+{
+    void main()
+       int a[];
+    {
+        a = new int[4];
+        read(a[2]);
+    }
+}

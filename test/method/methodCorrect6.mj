@@ -1,0 +1,12 @@
+program saban
+    char c;
+{
+    void main()
+       char tmp;
+    {
+        tmp = 'a';
+        c = tmp;
+        print(c);
+        print(tmp, 11);
+    }
+}

@@ -7,4 +7,12 @@ program neki
         x = new int[2 + 5 * 4];
         return 0;
      }
+
+     void main()
+       char c;
+     {
+        c = 'R';
+        print('R');
+        print(2);
+     }
   }

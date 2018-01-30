@@ -13,7 +13,7 @@ public class ParserTestMJ {
 
     @Test
     public void testSimple() {
-        File source = new File("test/constant/constantPE1.mj");
+        File source = new File("test/method/methodCorrect5.mj");
 
         Assert.assertTrue(source.getAbsolutePath(), source.exists());
 
@@ -24,7 +24,7 @@ public class ParserTestMJ {
             Symbol s = parser.parse();
             SyntaxNode prog = (SyntaxNode) (s.value);
 
-            Semantics visitor = new Semantics();
+            SemanticAnalyzer visitor = new SemanticAnalyzer();
             prog.traverseBottomUp(visitor);
 
             Tab.dump();

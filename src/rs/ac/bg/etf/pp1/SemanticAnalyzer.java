@@ -8,7 +8,7 @@ import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.concepts.Struct;
 
-public class Semantics extends VisitorAdaptor {
+public class SemanticAnalyzer extends VisitorAdaptor {
 
     static {
         DOMConfigurator.configure(Log4JUtils.instance().findLoggerConfigFile());
@@ -20,13 +20,13 @@ public class Semantics extends VisitorAdaptor {
     private Struct currentType;
 
     private Obj currentMethod;
-    private int paramNum;
+    private int level = 0;
 
-    public Semantics() {
-        logger = Logger.getLogger(Semantics.class);
+    public SemanticAnalyzer() {
+        logger = Logger.getLogger(SemanticAnalyzer.class);
 
         Tab.init();
-        Tab.insert(Obj.Type, "bool", new Struct(Struct.Int));
+        Tab.insert(Obj.Type, "bool", Tab.intType);
     }
 
     private void report_info(String msg) {
@@ -48,7 +48,8 @@ public class Semantics extends VisitorAdaptor {
         if (Tab.find(ident) != Tab.noObj) {
             report_error("Line " + VarIDArray.getLine() + " Symbol already defined");
         } else {
-            Tab.insert(Obj.Var, ident, new Struct(Struct.Array, currentType));
+            Obj tmp = Tab.insert(Obj.Var, ident, new Struct(Struct.Array, currentType));
+            tmp.setLevel(level);
 
             report_info("Line " + VarIDArray.getLine() + " Defined array variable: " + ident);
         }
@@ -60,37 +61,24 @@ public class Semantics extends VisitorAdaptor {
         if (Tab.find(ident) != Tab.noObj) {
             report_error("Line " + VarID.getLine() + " Symbol already defined");
         } else {
-            Tab.insert(Obj.Var, ident, currentType);
+            Obj tmp = Tab.insert(Obj.Var, ident, currentType);
+            tmp.setLevel(level);
 
             report_info("Line " + VarID.getLine() + " Defined variable: " + ident);
         }
     }
 
     @Override public void visit(CharConst CharConst) {
-        if (!currentType.compatibleWith(Tab.charType)) {
-            report_error("Line " + CharConst.getLine() + " Wrong operand type");
-        }
-
-        CharConst.obj =
-            new Obj(Obj.Con, "", Tab.charType, Character.getNumericValue(CharConst.getVar()),
-                Obj.NO_VALUE);
+        CharConst.obj = new Obj(Obj.Con, "", Tab.charType, (int) CharConst.getVar(), Obj.NO_VALUE);
         report_debug("Line " + CharConst.getLine() + " Found char constant's value");
     }
 
     @Override public void visit(BoolConst BoolConst) {
-        if (!currentType.compatibleWith(Tab.find("bool").getType())) {
-            report_error("Line " + BoolConst.getLine() + " Wrong operand type");
-        }
-
         BoolConst.obj = new Obj(Obj.Con, "", Tab.intType, BoolConst.getVar() ? 1 : 0, Obj.NO_VALUE);
         report_debug("Line " + BoolConst.getLine() + " Found Bool constant");
     }
 
     @Override public void visit(NumericConst NumericConst) {
-        if (!currentType.compatibleWith(Tab.intType)) {
-            report_error("Line " + NumericConst.getLine() + " Wrong operand type");
-        }
-
         NumericConst.obj = new Obj(Obj.Con, "", Tab.intType, NumericConst.getVar(), Obj.NO_VALUE);
         report_debug("Line " + NumericConst.getLine() + " Found number constant");
     }
@@ -123,6 +111,8 @@ public class Semantics extends VisitorAdaptor {
         Obj constObj = Tab.find(((ConstIdentifier) ConstId.getConst_identifier()).getId());
         if (constObj == Tab.noObj) {
             report_error("Line " + ConstId.getLine() + " Assignment into undefined constant");
+        } else if (!ConstId.getConstant().obj.getType().compatibleWith(currentType)) {
+            report_error("Line " + ConstId.getLine() + " Assignment value not of the same type");
         } else {
             constObj.setAdr(ConstId.getConstant().obj.getAdr());
             report_debug("Line " + ConstId.getLine() + " Constant " + ((ConstIdentifier) ConstId
@@ -137,11 +127,12 @@ public class Semantics extends VisitorAdaptor {
         }
 
         MethodIdentifier.obj = Tab.insert(Obj.Meth, MethodIdentifier.getId(),
-            ((MethodReturnType) MethodIdentifier.getMethod_return_type()).getType().struct);
+            MethodIdentifier.getMethod_return_type().struct);
+
         currentMethod = MethodIdentifier.obj;
         Tab.openScope();
         returnFound = false;
-        paramNum = 1;
+        level++;
 
         report_info(
             "Line " + MethodIdentifier.getLine() + " Found method " + MethodIdentifier.getId());
@@ -149,13 +140,12 @@ public class Semantics extends VisitorAdaptor {
 
     @Override public void visit(FormalParameter FormalParameter) {
         Tab.currentScope().addToLocals(
-            new Obj(Obj.Var, FormalParameter.getI2(), FormalParameter.getType().struct, 0,
-                paramNum++));
+            new Obj(Obj.Var, FormalParameter.getI2(), FormalParameter.getType().struct, 0, level));
     }
 
     @Override public void visit(FormalParameterArray FormalParameterArray) {
         Tab.currentScope().addToLocals(new Obj(Obj.Var, FormalParameterArray.getI2(),
-            new Struct(Struct.Array, FormalParameterArray.getType().struct), 0, paramNum++));
+            new Struct(Struct.Array, FormalParameterArray.getType().struct), 0, level));
     }
 
     @Override public void visit(MethodDefinition MethodDefinition) {
@@ -168,7 +158,7 @@ public class Semantics extends VisitorAdaptor {
 
         currentMethod = null;
         returnFound = false;
-        paramNum = 0;
+        level--;
         report_debug("Line " + MethodDefinition.getLine() + " Method definition complete");
     }
 
@@ -201,6 +191,10 @@ public class Semantics extends VisitorAdaptor {
     @Override public void visit(ExpressionFactor ExpressionFactor) {
         ExpressionFactor.struct = ExpressionFactor.getExpression().struct;
         //report_debug("Line " + ExpressionFactor.getLine() + " found expression factor");
+    }
+
+    @Override public void visit(DesignatorFactor designatorFactor) {
+        designatorFactor.struct = designatorFactor.getDesignator().obj.getType();
     }
 
     @Override public void visit(AddExpression AddExpression) {
@@ -241,14 +235,66 @@ public class Semantics extends VisitorAdaptor {
         NegTerminalTerm.struct = NegTerminalTerm.getTerm().struct;
     }
 
-    @Override public void visit(Designator Designator) {
-        Obj tmp = Tab.find(Designator.getId());
-        if (tmp == Tab.noObj) {
-            report_error(
-                "Line " + Designator.getLine() + " name " + Designator.getId() + " not declared");
+    @Override public void visit(Assignment assignment) {
+        Obj tmp = assignment.getDesignator().obj;
+
+        if (tmp.getKind() == Obj.Var || tmp.getKind() == Obj.Elem) {
+            if (!assignment.getExpression().struct.assignableTo(tmp.getType())) {
+                report_error("Line " + assignment.getLine() + " assignment types not compatible");
+            }
+        } else {
+            report_error("Line " + assignment.getLine()
+                + " assignment left side must be variable or array element");
         }
 
-        Designator.obj = tmp;
+    }
+
+    @Override public void visit(Increment increment) {
+        Obj tmp = increment.getDesignator().obj;
+
+        if (tmp.getKind() == Obj.Var || tmp.getKind() == Obj.Elem) {
+            if (!tmp.getType().compatibleWith(Tab.intType)) {
+                report_error("Line " + increment.getLine() + " only integers can be incremented");
+            }
+        } else {
+            report_error("Line " + increment.getLine() + " wrong operand type");
+        }
+    }
+
+    @Override public void visit(Decrement decrement) {
+        Obj tmp = decrement.getDesignator().obj;
+
+        if (tmp.getKind() == Obj.Var || tmp.getKind() == Obj.Elem) {
+            if (!tmp.getType().compatibleWith(Tab.intType)) {
+                report_error("Line " + decrement.getLine() + " only integers can be decremented");
+            }
+        } else {
+            report_error("Line " + decrement.getLine() + " wrong operand type");
+        }
+    }
+
+    @Override public void visit(DesignatorSingle DesignatorSingle) {
+        Obj tmp = Tab.find(DesignatorSingle.getId());
+        if (tmp == Tab.noObj) {
+            report_error("Line " + DesignatorSingle.getLine() + " name " + DesignatorSingle.getId()
+                + " not declared");
+        }
+
+        DesignatorSingle.obj = tmp;
+    }
+
+    @Override public void visit(DesignatorArray designatorArray) {
+        Obj tmp = Tab.find(designatorArray.getId());
+        if (tmp == Tab.noObj) {
+            report_error("Line " + designatorArray.getLine() + " name " + designatorArray.getId()
+                + " not declared");
+        }
+
+        if (!designatorArray.getExpression().struct.compatibleWith(Tab.intType)) {
+            report_error("Line " + designatorArray.getLine() + " array index must be an integer");
+        }
+
+        designatorArray.obj = tmp;
     }
 
     @Override public void visit(Type Type) {
@@ -266,6 +312,14 @@ public class Semantics extends VisitorAdaptor {
 
         currentType = Type.struct;
         report_debug("Type " + Type.getLine());
+    }
+
+    @Override public void visit(MethodReturnType MethodReturnType) {
+        MethodReturnType.struct = MethodReturnType.getType().struct;
+    }
+
+    @Override public void visit(VoidReturnType VoidReturnType) {
+        VoidReturnType.struct = Tab.noType;
     }
 
     @Override public void visit(ProgramName ProgramName) {
