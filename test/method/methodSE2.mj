@@ -1,0 +1,10 @@
+program saban
+
+{
+    void main()
+       char c;
+    {
+        c = 'a' + 'b';
+        print(c);
+    }
+}

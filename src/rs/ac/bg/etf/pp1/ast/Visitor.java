@@ -1,12 +1,13 @@
 // generated with ast extension for cup
 // version 0.8
-// 30/0/2018 19:5:1
+// 31/0/2018 13:17:49
 
 
 package rs.ac.bg.etf.pp1.ast;
 
 public interface Visitor { 
 
+    public void visit(Array_ident array_ident);
     public void visit(Designator designator);
     public void visit(Method_return_type method_return_type);
     public void visit(Read_statement read_statement);
@@ -24,6 +25,7 @@ public interface Visitor {
     public void visit(Print_statement print_statement);
     public void visit(Designator_statement designator_statement);
     public void visit(Formal_parameter_list formal_parameter_list);
+    public void visit(Actual_parameters actual_parameters);
     public void visit(Expression expression);
     public void visit(Multiplication_operator multiplication_operator);
     public void visit(Optional_method_decl_section optional_method_decl_section);
@@ -48,6 +50,7 @@ public interface Visitor {
     public void visit(Method_decl method_decl);
     public void visit(Statement_list statement_list);
     public void visit(Var_id_list var_id_list);
+    public void visit(MethodCall MethodCall);
     public void visit(DesignatorFactor DesignatorFactor);
     public void visit(ConstructorArrayFactor ConstructorArrayFactor);
     public void visit(ConstructorFactor ConstructorFactor);
@@ -64,8 +67,9 @@ public interface Visitor {
     public void visit(NegTerminalTerm NegTerminalTerm);
     public void visit(TerminalTerm TerminalTerm);
     public void visit(TermList TermList);
-    public void visit(SimpleExpression SimpleExpression);
     public void visit(AddExpression AddExpression);
+    public void visit(Actual_parametersDerived1 Actual_parametersDerived1);
+    public void visit(ArrayIdent ArrayIdent);
     public void visit(DesignatorArray DesignatorArray);
     public void visit(DesignatorSingle DesignatorSingle);
     public void visit(Decrement Decrement);

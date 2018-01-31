@@ -1,0 +1,10 @@
+program saban
+  int x;
+
+{
+    void main()
+    {
+       f();
+       print (x);
+    }
+}

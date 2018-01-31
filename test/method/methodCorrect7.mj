@@ -10,8 +10,5 @@ program saban
         asd = 1 - (qwe - zxc) * 2;
         print(asd);
         print(qwe, 11);
-
-        c = 'a' + 'b';
-        print(c);
     }
 }

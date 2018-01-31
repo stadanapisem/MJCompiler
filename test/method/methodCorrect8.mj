@@ -1,0 +1,21 @@
+program saban
+
+{
+
+    void main()
+      int a[];
+    {
+        a = new int[5];
+        a[0] = 1;
+        a[1] = 1;
+        a[2] = a[0] + a[1];
+        a[3] = a[0] * a[2];
+        a[4] = (a[3] / a[0] - (-1)) * 2 + 2 / 2;
+
+        print(a[0]); print(eol);
+        print(a[1]); print(eol);
+        print(a[2]); print(eol);
+        print(a[3]); print(eol);
+        print(a[4]); print(eol);
+    }
+}

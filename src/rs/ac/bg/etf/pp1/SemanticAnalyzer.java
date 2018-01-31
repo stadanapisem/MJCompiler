@@ -183,7 +183,8 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     }
 
     @Override public void visit(ConstructorArrayFactor ConstructorArrayFactor) {
-        ConstructorArrayFactor.struct = ConstructorArrayFactor.getType().struct;
+        ConstructorArrayFactor.struct =
+            new Struct(Struct.Array, ConstructorArrayFactor.getType().struct);
         //report_debug(
         //    "Line " + ConstructorArrayFactor.getLine() + " found array constructor factor");
     }
@@ -207,9 +208,9 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     }
 
     @Override public void visit(FactorList FactorList) {
-        if (!FactorList.getFactor().struct
-            .compatibleWith(FactorList.getMultiplication_factor_list().struct)) {
-            report_error("Line " + FactorList.getLine() + " Types not compatible");
+        if (FactorList.getFactor().struct != Tab.intType
+            || FactorList.getMultiplication_factor_list().struct != Tab.intType) {
+            report_error("Line " + FactorList.getLine() + " Only integer arithmetic is supported");
         }
 
         FactorList.struct = FactorList.getMultiplication_factor_list().struct;
@@ -220,8 +221,9 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     }
 
     @Override public void visit(TermList TermList) {
-        if (!TermList.getTerm().struct.compatibleWith(TermList.getAddition_term_list().struct)) {
-            report_error("Line " + TermList.getLine() + " Types not compatible");
+        if (TermList.getTerm().struct != Tab.intType
+            || TermList.getAddition_term_list().struct != Tab.intType) {
+            report_error("Line " + TermList.getLine() + " Only integer arithmetic is supported");
         }
 
         TermList.struct = TermList.getAddition_term_list().struct;
@@ -284,17 +286,25 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     }
 
     @Override public void visit(DesignatorArray designatorArray) {
-        Obj tmp = Tab.find(designatorArray.getId());
-        if (tmp == Tab.noObj) {
-            report_error("Line " + designatorArray.getLine() + " name " + designatorArray.getId()
-                + " not declared");
-        }
-
         if (!designatorArray.getExpression().struct.compatibleWith(Tab.intType)) {
             report_error("Line " + designatorArray.getLine() + " array index must be an integer");
         }
 
-        designatorArray.obj = tmp;
+        designatorArray.obj = designatorArray.getArray_ident().obj;
+    }
+
+    @Override public void visit(ArrayIdent arrayIdent) {
+        String ident = arrayIdent.getId();
+        Obj tmp = Tab.find(ident);
+        if (tmp == Tab.noObj) {
+            report_error("Line " + arrayIdent.getLine() + " name " + ident + " not declared");
+        }
+
+        arrayIdent.obj = new Obj(Obj.Elem, tmp.getName(), tmp.getType().getElemType());
+    }
+
+    @Override public void visit(MethodCall methodCall) {
+        methodCall.struct = methodCall.getDesignator().obj.getType();
     }
 
     @Override public void visit(Type Type) {

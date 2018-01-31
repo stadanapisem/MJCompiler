@@ -3,14 +3,6 @@ package rs.ac.bg.etf.pp1;
 import java_cup.runtime.*;
 import rs.ac.bg.etf.pp1.ast.*;
 
-scan with {:
-    Symbol s = this.getScanner().next_token();
-    if (s != null && s.value != null)
-       System.err.println(s.toString() + " " + s.value.toString());
-
-    return s;
-:}
-
 // *****************  KEYWORDS **********************
 terminal PROGRAM, CONST, VOID, BREAK, CLASS, IF, ELSE, NEW, RETURN, DO, WHILE, EXTENDS;
 terminal CONTINUE, PRINT, READ;
@@ -40,8 +32,8 @@ nonterminal rs.etf.pp1.symboltable.concepts.Obj const_id, method_identifier;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj constant, char_const, numeric_const, bool_const;
 
 nonterminal statement_list, statement, print_statement, read_statement, return_statement;
-nonterminal designator_statement;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj designator;
+nonterminal designator_statement, actual_parameters;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj designator, array_ident;
 nonterminal java.lang.String addition_operator, multiplication_operator;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct term, factor, expression, addition_term_list, multiplication_factor_list;
 // **************************************************
@@ -125,11 +117,12 @@ designator_statement ::= (Assignment) designator ASSIGN expression
                        | (Increment) designator INC
                        | (Decrement) designator DEC;
   designator ::= (DesignatorSingle) IDENT: id
-               | (DesignatorArray) IDENT: id LSQUARE expression RSQUARE;
+               | (DesignatorArray) array_ident expression RSQUARE;
+    array_ident ::= (ArrayIdent) IDENT: id LSQUARE;
+    actual_parameters ::= /* epsilon */;
 
 // ***************** EXPRESSIONS ********************
-expression ::= (AddExpression) addition_term_list
-             | (SimpleExpression) designator LPAREN RPAREN;
+expression ::= (AddExpression) addition_term_list;
   addition_term_list ::= (TermList) addition_term_list addition_operator term
                        | (TerminalTerm) term
                        | (NegTerminalTerm) MINUS term;
@@ -145,4 +138,5 @@ expression ::= (AddExpression) addition_term_list
            | (ExpressionFactor) LPAREN expression RPAREN
            | (ConstructorFactor) NEW type
            | (ConstructorArrayFactor) NEW type LSQUARE expression RSQUARE
-           | (DesignatorFactor) designator;
+           | (DesignatorFactor) designator
+           | (MethodCall) designator LPAREN actual_parameters RPAREN;

@@ -39,10 +39,12 @@ import java.util.stream.Collectors;
     }
 
 
-    @Test(expected = Exception.class) public void testSimple() throws Exception {
+    @Test(expected = Exception.class) public void testParserError() throws Exception {
         File source = new File(filePath);
 
         Assert.assertTrue(source.getAbsolutePath(), source.exists());
+        System.out.println(filePath.toString());
+        System.out.println("------------------------------------------");
 
         try (FileReader fileReader = new FileReader(source)) {
             Yylex lexer = new Yylex(fileReader);
@@ -57,5 +59,6 @@ import java.util.stream.Collectors;
             Tab.dump();
         }
 
+        System.out.println("------------------------------------------");
     }
 }

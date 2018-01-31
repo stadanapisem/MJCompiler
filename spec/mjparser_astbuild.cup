@@ -3,14 +3,6 @@ package rs.ac.bg.etf.pp1;
 import java_cup.runtime.*;
 import rs.ac.bg.etf.pp1.ast.*;
 
-scan with {:
-    Symbol s = this.getScanner().next_token();
-    if (s != null && s.value != null)
-       System.err.println(s.toString() + " " + s.value.toString());
-
-    return s;
-:}
-
 // *****************  KEYWORDS **********************
 terminal PROGRAM, CONST, VOID, BREAK, CLASS, IF, ELSE, NEW, RETURN, DO, WHILE, EXTENDS;
 terminal CONTINUE, PRINT, READ;
@@ -64,7 +56,8 @@ nonterminal Print_statement print_statement;
 nonterminal Read_statement read_statement;
 nonterminal Return_statement return_statement;
 nonterminal Designator_statement designator_statement;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj designator;
+nonterminal Actual_parameters actual_parameters;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj designator, array_ident;
 nonterminal java.lang.String addition_operator, multiplication_operator;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct term, factor, expression, addition_term_list, multiplication_factor_list;
 // **************************************************
@@ -148,11 +141,12 @@ designator_statement ::= (Assignment) designator:d1 ASSIGN expression:e2 {: RESU
                        | (Increment) designator:d1 INC {: RESULT=new Increment(d1); RESULT.setLine(d1left); :}
                        | (Decrement) designator:d1 DEC {: RESULT=new Decrement(d1); RESULT.setLine(d1left); :};
   designator ::= (DesignatorSingle) IDENT: id {: RESULT=new DesignatorSingle(id); RESULT.setLine(idleft); :}
-               | (DesignatorArray) IDENT: id LSQUARE expression:e1 RSQUARE {: RESULT=new DesignatorArray(id, e1); RESULT.setLine(idleft); :};
+               | (DesignatorArray) array_ident:a1 expression:e2 RSQUARE {: RESULT=new DesignatorArray(a1, e2); RESULT.setLine(a1left); :};
+    array_ident ::= (ArrayIdent) IDENT: id LSQUARE {: RESULT=new ArrayIdent(id); RESULT.setLine(idleft); :};
+    actual_parameters ::= {: RESULT=new Actual_parametersDerived1(); :} /* epsilon */;
 
 // ***************** EXPRESSIONS ********************
-expression ::= (AddExpression) addition_term_list:a1 {: RESULT=new AddExpression(a1); RESULT.setLine(a1left); :}
-             | (SimpleExpression) designator:d1 LPAREN RPAREN {: RESULT=new SimpleExpression(d1); RESULT.setLine(d1left); :};
+expression ::= (AddExpression) addition_term_list:a1 {: RESULT=new AddExpression(a1); RESULT.setLine(a1left); :};
   addition_term_list ::= (TermList) addition_term_list:a1 addition_operator:a2 term:t3 {: RESULT=new TermList(a1, a2, t3); RESULT.setLine(a1left); :}
                        | (TerminalTerm) term:t1 {: RESULT=new TerminalTerm(t1); RESULT.setLine(t1left); :}
                        | (NegTerminalTerm) MINUS term:t1 {: RESULT=new NegTerminalTerm(t1); RESULT.setLine(t1left); :};
@@ -168,4 +162,5 @@ expression ::= (AddExpression) addition_term_list:a1 {: RESULT=new AddExpression
            | (ExpressionFactor) LPAREN expression:e1 RPAREN {: RESULT=new ExpressionFactor(e1); RESULT.setLine(e1left); :}
            | (ConstructorFactor) NEW type:t1 {: RESULT=new ConstructorFactor(t1); RESULT.setLine(t1left); :}
            | (ConstructorArrayFactor) NEW type:t1 LSQUARE expression:e2 RSQUARE {: RESULT=new ConstructorArrayFactor(t1, e2); RESULT.setLine(t1left); :}
-           | (DesignatorFactor) designator:d1 {: RESULT=new DesignatorFactor(d1); RESULT.setLine(d1left); :};
+           | (DesignatorFactor) designator:d1 {: RESULT=new DesignatorFactor(d1); RESULT.setLine(d1left); :}
+           | (MethodCall) designator:d1 LPAREN actual_parameters:a2 RPAREN {: RESULT=new MethodCall(d1, a2); RESULT.setLine(d1left); :};

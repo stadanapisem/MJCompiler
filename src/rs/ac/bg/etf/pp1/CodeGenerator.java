@@ -18,7 +18,7 @@ public class CodeGenerator extends VisitorAdaptor {
 
     Logger logger;
     private int mainPC = -1;
-    private Struct currentType;
+    private boolean returnFound = false;
     private String programName;
 
     public CodeGenerator() {
@@ -62,8 +62,18 @@ public class CodeGenerator extends VisitorAdaptor {
     }
 
     @Override public void visit(MethodDefinition methodDefinition) {
+        if (!returnFound) {
+            Code.put(Code.exit);
+            Code.put(Code.return_);
+        }
+
+        returnFound = false;
+    }
+
+    @Override public void visit(ReturnStatement returnStatement) {
         Code.put(Code.exit);
         Code.put(Code.return_);
+        returnFound = true;
     }
 
     @Override public void visit(ProgramName programName) {
@@ -88,9 +98,11 @@ public class CodeGenerator extends VisitorAdaptor {
         }
 
         Code.loadConst(5);
-        if (printStatement.getExpression().struct == Tab.intType) {
+        if (printStatement.getExpression().struct == Tab.intType
+            || printStatement.getExpression().struct.getElemType() == Tab.intType) {
             Code.put(Code.print);
-        } else if (printStatement.getExpression().struct == Tab.charType) {
+        } else if (printStatement.getExpression().struct == Tab.charType
+            || printStatement.getExpression().struct.getElemType() == Tab.charType) {
             Code.put(Code.bprint);
         }
     }
@@ -270,61 +282,57 @@ public class CodeGenerator extends VisitorAdaptor {
         NegTerminalTerm.struct = NegTerminalTerm.getTerm().struct;
     }
 
+    @Override public void visit(MethodCall methodCall) {
+        int offset = methodCall.getDesignator().obj.getAdr() - Code.pc;
+
+        Code.put(Code.call);
+        Code.put2(offset);
+    }
+
     @Override public void visit(DesignatorSingle DesignatorSingle) {
         Obj tmp = completeSeach(Tab.find(programName), DesignatorSingle.getId());
         if (tmp == Tab.noObj) {
-            report_error("Line " + DesignatorSingle.getLine() + " name " + DesignatorSingle.getId()
-                + " not declared");
+            tmp = Tab.find(DesignatorSingle.getId());
+
+            if (tmp == Tab.noObj) {
+                report_error(
+                    "Line " + DesignatorSingle.getLine() + " name " + DesignatorSingle.getId()
+                        + " not declared");
+            }
         }
 
         DesignatorSingle.obj = tmp;
     }
 
     @Override public void visit(DesignatorArray designatorArray) {
-        Obj tmp = completeSeach(Tab.find(programName), designatorArray.getId());
+        designatorArray.obj = designatorArray.getArray_ident().obj;
+    }
+
+    @Override public void visit(ArrayIdent arrayIdent) {
+        String ident = arrayIdent.getId();
+        Obj tmp = completeSeach(Tab.find(programName), ident);
         if (tmp == Tab.noObj) {
-            report_error("Line " + designatorArray.getLine() + " name " + designatorArray.getId()
-                + " not declared");
+            report_error("Line " + arrayIdent.getLine() + " name " + ident + " not declared");
         }
 
-        if (!designatorArray.getExpression().struct.compatibleWith(Tab.intType)) {
-            report_error("Line " + designatorArray.getLine() + " array index must be an integer");
-        }
-
-        designatorArray.obj = tmp;
+        arrayIdent.obj = new Obj(Obj.Elem, tmp.getName(), tmp.getType().getElemType());
         Code.load(tmp);
     }
 
     @Override public void visit(Type Type) {
-        Obj typeNode = Tab.find(Type.getTypeName());
-
-        if (typeNode.equals(Tab.noObj)) {
-            report_error("Symbol not found " + Type.getTypeName());
-        } else if (typeNode.getKind() == Obj.Type) {
-            Type.struct = typeNode.getType();
-        } else {
-            report_error(
-                "Line " + Type.getLine() + " Name: " + Type.getTypeName() + " is not a type");
-            Type.struct = Tab.noType;
-        }
-
-        currentType = Type.struct;
-        report_debug("Type " + Type.getLine());
+        Type.struct = Tab.find(Type.getTypeName()).getType();
     }
 
     @Override public void visit(CharConst CharConst) {
         CharConst.obj = new Obj(Obj.Con, "", Tab.charType, (int) CharConst.getVar(), Obj.NO_VALUE);
-        report_debug("Line " + CharConst.getLine() + " Found char constant's value");
     }
 
     @Override public void visit(BoolConst BoolConst) {
         BoolConst.obj = new Obj(Obj.Con, "", Tab.intType, BoolConst.getVar() ? 1 : 0, Obj.NO_VALUE);
-        report_debug("Line " + BoolConst.getLine() + " Found Bool constant");
     }
 
     @Override public void visit(NumericConst NumericConst) {
         NumericConst.obj = new Obj(Obj.Con, "", Tab.intType, NumericConst.getVar(), Obj.NO_VALUE);
-        report_debug("Line " + NumericConst.getLine() + " Found number constant");
     }
 
     @Override public void visit(ConstChar ConstChar) {
@@ -341,14 +349,12 @@ public class CodeGenerator extends VisitorAdaptor {
 
     @Override public void visit(ConstId ConstId) {
         Obj constObj = ConstId.getConstant().obj;
-        if (constObj == Tab.noObj) {
-            report_error("Line " + ConstId.getLine() + " Assignment into undefined constant");
-        } else {
-            constObj.setAdr(ConstId.getConstant().obj.getAdr());
-            report_debug("Line " + ConstId.getLine() + " Constant " + ((ConstIdentifier) ConstId
-                .getConst_identifier()).getId() + " assigned with value: " + ConstId
-                .getConstant().obj.getAdr());
-        }
+
+        constObj.setAdr(ConstId.getConstant().obj.getAdr());
+        report_debug("Line " + ConstId.getLine() + " Constant " + ((ConstIdentifier) ConstId
+            .getConst_identifier()).getId() + " assigned with value: " + ConstId.getConstant().obj
+            .getAdr());
+
     }
 
     private Obj completeSeach(Obj obj, String ident) {

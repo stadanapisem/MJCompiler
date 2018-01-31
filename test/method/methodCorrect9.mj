@@ -1,0 +1,19 @@
+program saban
+ char glob;
+{
+    int f()
+    {
+       glob = 'a';
+       return 69;
+    }
+
+    void main()
+      int tmp;
+    {
+       glob = 'c';
+       print(glob); print(eol);
+       tmp = f();
+       print(glob); print(eol);
+       print(tmp); print(eol);
+    }
+}
