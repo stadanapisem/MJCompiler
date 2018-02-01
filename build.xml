@@ -47,7 +47,7 @@
         <delete dir="${src.dir}/rs/ac/bg/etf/pp1/ast" />
         <mkdir dir="${src.dir}/rs/ac/bg/etf/pp1/ast" />
         <java classname="java_cup.Main" classpath="${lib.dir}/cup_v10k.jar" dir="${src.dir}" fork="true" failonerror="true">
-            <arg line="-destdir rs/ac/bg/etf/pp1 -dump_states -parser MJParser -ast rs.ac.bg.etf.pp1.ast -buildtree ../${spec.dir}/mjparser.cup" />
+            <arg line="-destdir rs/ac/bg/etf/pp1 -parser MJParser -ast rs.ac.bg.etf.pp1.ast -buildtree ../${spec.dir}/mjparser.cup" />
             <classpath refid="junit.class.path" />
         </java>
     </target>

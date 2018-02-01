@@ -1,0 +1,12 @@
+program saban{
+   int f() {
+   return 1;
+   }
+
+   void main()
+     char c;
+   {
+     c = f();
+   }
+
+}

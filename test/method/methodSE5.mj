@@ -1,0 +1,15 @@
+program saban
+
+{
+    int fun()
+    {
+       print('f');
+       return;
+    }
+
+    void main()
+
+    {
+      fun();
+    }
+}

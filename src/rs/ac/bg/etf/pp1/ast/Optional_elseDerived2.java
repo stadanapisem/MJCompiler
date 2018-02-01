@@ -1,13 +1,13 @@
 // generated with ast extension for cup
 // version 0.8
-// 31/0/2018 13:17:49
+// 1/1/2018 17:58:9
 
 
 package rs.ac.bg.etf.pp1.ast;
 
-public class Actual_parametersDerived1 extends Actual_parameters {
+public class Optional_elseDerived2 extends Optional_else {
 
-    public Actual_parametersDerived1 () {
+    public Optional_elseDerived2 () {
     }
 
     public void accept(Visitor visitor) {
@@ -28,10 +28,10 @@ public class Actual_parametersDerived1 extends Actual_parameters {
     public String toString(String tab) {
         StringBuffer buffer=new StringBuffer();
         buffer.append(tab);
-        buffer.append("Actual_parametersDerived1(\n");
+        buffer.append("Optional_elseDerived2(\n");
 
         buffer.append(tab);
-        buffer.append(") [Actual_parametersDerived1]");
+        buffer.append(") [Optional_elseDerived2]");
         return buffer.toString();
     }
 }

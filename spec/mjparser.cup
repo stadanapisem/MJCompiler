@@ -31,11 +31,16 @@ nonterminal declaration_section, declaration,
 nonterminal rs.etf.pp1.symboltable.concepts.Obj const_id, method_identifier;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj constant, char_const, numeric_const, bool_const;
 
-nonterminal statement_list, statement, print_statement, read_statement, return_statement;
-nonterminal designator_statement, actual_parameters;
+nonterminal statement_list, statement, print_statement, read_statement, return_statement,
+            if_statement, if_statement_header, do_statement, break_statement, continue_statement,
+            optional_else, else_jmp_fix, remember_pc;
+nonterminal designator_statement, actual_parameter, actual_parameter_section, actual_parameter_list, method_call_ident;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj designator, array_ident;
 nonterminal java.lang.String addition_operator, multiplication_operator;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct term, factor, expression, addition_term_list, multiplication_factor_list;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct condition, condition_term_list, condition_term, condition_factor_list, condition_factor;
+nonterminal java.lang.String rel_operator, or_operator, and_operator;
+precedence left ELSE;
 // **************************************************
 //
 // PRODUCTIONS
@@ -106,20 +111,41 @@ statement_list ::= (StatementList) statement_list statement
   statement ::= designator_statement SEMI
               | read_statement SEMI
               | print_statement SEMI
-              | return_statement SEMI;
-    return_statement ::= (ReturnStatement) RETURN expression;
+              | return_statement SEMI
+              | if_statement
+              | (DoStatement) do_statement SEMI
+              | (BreakStatement) break_statement SEMI
+              | (ContinueStatement) continue_statement SEMI
+              | LBRACE statement_list RBRACE;
+    return_statement ::= (ReturnStatement) RETURN expression
+                       | (ReturnVoid) RETURN;
     read_statement ::= (ReadStatement) READ LPAREN designator RPAREN;
     print_statement ::= (PrintStatement) PRINT LPAREN expression RPAREN
                       | (ComplexPrintStatement) PRINT LPAREN expression COMMA numeric_const RPAREN;
+    if_statement ::= (IfStatement) if_statement_header statement optional_else;
+      if_statement_header ::= IF LPAREN condition RPAREN;
+      optional_else ::= else_jmp_fix statement
+                      | /* epsilon */;
+        else_jmp_fix ::= (ElseFix) ELSE;
+    do_statement ::= remember_pc statement WHILE LPAREN condition RPAREN;
+        remember_pc ::= (RememberPc) DO;
+    break_statement ::= BREAK;
+    continue_statement ::= CONTINUE;
 
 // ***************** DESIGNATORS ********************
 designator_statement ::= (Assignment) designator ASSIGN expression
                        | (Increment) designator INC
-                       | (Decrement) designator DEC;
+                       | (Decrement) designator DEC
+                       | (MethodCallDesignator) method_call_ident actual_parameter_section RPAREN;
+    method_call_ident ::= (MethodCallIdent) designator LPAREN;
   designator ::= (DesignatorSingle) IDENT: id
                | (DesignatorArray) array_ident expression RSQUARE;
     array_ident ::= (ArrayIdent) IDENT: id LSQUARE;
-    actual_parameters ::= /* epsilon */;
+    actual_parameter_section ::= actual_parameter_list
+                               | /* epsilon */;
+      actual_parameter_list ::= actual_parameter_list COMMA actual_parameter
+                              | actual_parameter;
+        actual_parameter ::= (ActualParameter) expression;
 
 // ***************** EXPRESSIONS ********************
 expression ::= (AddExpression) addition_term_list;
@@ -139,4 +165,22 @@ expression ::= (AddExpression) addition_term_list;
            | (ConstructorFactor) NEW type
            | (ConstructorArrayFactor) NEW type LSQUARE expression RSQUARE
            | (DesignatorFactor) designator
-           | (MethodCall) designator LPAREN actual_parameters RPAREN;
+           | (MethodCall) method_call_ident actual_parameter_section RPAREN;
+
+// ***************** CONDITIONS *********************
+condition ::= (CondExpression) condition_term_list;
+  condition_term_list ::= (CondTermList) condition_term_list or_operator condition_term
+                        | (CondTerminalTerm) condition_term;
+     or_operator ::= (OperatorOr) OR;
+    condition_term ::= (CondTerm) condition_factor_list;
+  condition_factor_list ::= (CondFactorList) condition_factor_list and_operator condition_factor
+                          | (TerminalCondFactor) condition_factor;
+      and_operator ::= (OperatorAnd) AND;
+    condition_factor ::= (TermCondFactor) expression
+                       | (CondOpFactor) expression rel_operator expression;
+  rel_operator ::= (OperatorEq) EQ
+                 | (OperatorNeq) NEQ
+                 | (OperatorGrt) GRT
+                 | (OperatorGrteq) GRTEQ
+                 | (OperatorLss) LSS
+                 | (OperatorLeq) LEQ;

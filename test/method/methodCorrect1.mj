@@ -1,6 +1,6 @@
 program neki
   {
-     int method(int x, bool b[])
+     int method(int x[], bool b[])
          int asd;
      {
         asd = (5 * 2);

@@ -17,7 +17,7 @@ public class CodeGeneratorTestMJ {
 
     @Test
     public void generateCode() {
-        File source = new File("test/method/methodCorrect9.mj");
+        File source = new File("test/method/methodSE8.mj");
 
         Assert.assertTrue(source.getAbsolutePath(), source.exists());
 

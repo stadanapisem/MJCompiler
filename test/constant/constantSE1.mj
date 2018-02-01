@@ -1,5 +1,5 @@
 program neki
 
-    const int a = '1';
-    const bool b = 2;
+    const int a = 11;
+    const bool b = 'c';
 {}

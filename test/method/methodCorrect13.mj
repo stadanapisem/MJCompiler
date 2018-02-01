@@ -1,0 +1,17 @@
+program saban
+
+{
+    void main()
+       int a;
+       bool b;
+    {
+       a = 2;
+       b = false;
+       if (a < 3 || b && false) {
+          print('y');
+          print(eol);
+       } else {
+          print('n');
+       }
+    }
+}

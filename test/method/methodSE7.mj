@@ -1,0 +1,14 @@
+program saban
+{
+    int f(int x)
+    {
+        return x + 1;
+    }
+
+    void main()
+      char a;
+    {
+       a = 'a';
+       print(f(a));
+    }
+}

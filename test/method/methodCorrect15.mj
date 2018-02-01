@@ -1,0 +1,30 @@
+program saban
+
+{
+    void main()
+      int a, i, b, x, tmp;
+    {
+      a = 0;
+      x = 1;
+
+      do {
+       i = 3;
+       a = 1;
+       b = 1;
+       if (x < i) {
+          x++;
+          continue;
+       }
+
+       do {
+          tmp = a;
+          a = a + b;
+          b = tmp;
+          i++;
+       } while (i <= x);
+
+       print(x); print(a, 10); print(eol);
+       x ++;
+      } while (x < 30);
+    }
+}

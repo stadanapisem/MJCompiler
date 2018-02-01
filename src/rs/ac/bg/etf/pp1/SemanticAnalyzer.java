@@ -15,18 +15,21 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         Log4JUtils.instance().prepareLogFile(Logger.getRootLogger());
     }
 
-    boolean returnFound = false;
+    private int returnsFound = 0;
     private Logger logger;
     private Struct currentType;
 
-    private Obj currentMethod;
+    private Obj currentMethod, currentMethodCall, boolType;
+    private boolean foundBool = false;
     private int level = 0;
+    private int actualParameterIndex = 0;
+    private int controlPaths = 0;
 
     public SemanticAnalyzer() {
         logger = Logger.getLogger(SemanticAnalyzer.class);
 
         Tab.init();
-        Tab.insert(Obj.Type, "bool", Tab.intType);
+        boolType = Tab.insert(Obj.Type, "bool", Tab.charType);
     }
 
     private void report_info(String msg) {
@@ -74,7 +77,8 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     }
 
     @Override public void visit(BoolConst BoolConst) {
-        BoolConst.obj = new Obj(Obj.Con, "", Tab.intType, BoolConst.getVar() ? 1 : 0, Obj.NO_VALUE);
+        BoolConst.obj =
+            new Obj(Obj.Con, "", Tab.charType, BoolConst.getVar() ? 1 : 0, Obj.NO_VALUE);
         report_debug("Line " + BoolConst.getLine() + " Found Bool constant");
     }
 
@@ -107,11 +111,17 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         }
     }
 
+    @Override public void visit(ConstDeclarationLine constDeclarationLine) {
+        foundBool = false;
+    }
+
     @Override public void visit(ConstId ConstId) {
         Obj constObj = Tab.find(((ConstIdentifier) ConstId.getConst_identifier()).getId());
         if (constObj == Tab.noObj) {
             report_error("Line " + ConstId.getLine() + " Assignment into undefined constant");
         } else if (!ConstId.getConstant().obj.getType().compatibleWith(currentType)) {
+            report_error("Line " + ConstId.getLine() + " Assignment value not of the same type");
+        } else if (foundBool && ConstId.getConstant().obj.getAdr() > 1) {
             report_error("Line " + ConstId.getLine() + " Assignment value not of the same type");
         } else {
             constObj.setAdr(ConstId.getConstant().obj.getAdr());
@@ -131,8 +141,9 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 
         currentMethod = MethodIdentifier.obj;
         Tab.openScope();
-        returnFound = false;
         level++;
+        returnsFound = 0;
+        controlPaths = 1;
 
         report_info(
             "Line " + MethodIdentifier.getLine() + " Found method " + MethodIdentifier.getId());
@@ -148,16 +159,24 @@ public class SemanticAnalyzer extends VisitorAdaptor {
             new Struct(Struct.Array, FormalParameterArray.getType().struct), 0, level));
     }
 
+    @Override public void visit(MethodDeclaration methodDeclaration) {
+        Tab.chainLocalSymbols(currentMethod);
+    }
+
     @Override public void visit(MethodDefinition MethodDefinition) {
-        if (!returnFound && currentMethod.getType() != Tab.noType) {
+        if (returnsFound == 0 && currentMethod.getType() != Tab.noType) {
             report_error("Line " + MethodDefinition.getLine() + " method missing return statement");
+        } else if (returnsFound < controlPaths && currentMethod.getType() != Tab.noType) {
+            report_error("In method " + currentMethod.getName()
+                + " not all control paths have a return statement");
         }
 
-        Tab.chainLocalSymbols(currentMethod);
+        //Tab.chainLocalSymbols(currentMethod);
         Tab.closeScope();
 
         currentMethod = null;
-        returnFound = false;
+        returnsFound = 0;
+        controlPaths = 1;
         level--;
         report_debug("Line " + MethodDefinition.getLine() + " Method definition complete");
     }
@@ -168,8 +187,16 @@ public class SemanticAnalyzer extends VisitorAdaptor {
                 "Line " + ReturnStatement.getLine() + " Wrong operand type in return statement");
         }
 
-        returnFound = true;
+        returnsFound++;
         report_debug("Line " + ReturnStatement.getLine() + " found return");
+    }
+
+    @Override public void visit(ReturnVoid returnVoid) {
+        if (currentMethod.getType() != Tab.noType) {
+            report_error("Line " + returnVoid.getLine() + " Return statement needs an operand");
+        }
+
+        returnsFound++;
     }
 
     @Override public void visit(ConstantFactor ConstantFactor) {
@@ -303,8 +330,89 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         arrayIdent.obj = new Obj(Obj.Elem, tmp.getName(), tmp.getType().getElemType());
     }
 
+    @Override public void visit(MethodCallIdent methodCallIdent) {
+        currentMethodCall = methodCallIdent.getDesignator().obj;
+        actualParameterIndex = 0;
+    }
+
     @Override public void visit(MethodCall methodCall) {
-        methodCall.struct = methodCall.getDesignator().obj.getType();
+        methodCall.struct = currentMethodCall.getType();
+    }
+
+    @Override public void visit(MethodCallDesignator methodCallDesignator) {
+    }
+
+    @Override public void visit(ActualParameter actualParameter) {
+        Obj[] params = currentMethodCall.getLocalSymbols()
+            .toArray(new Obj[currentMethodCall.getLocalSymbols().size()]);
+
+        if (!params[actualParameterIndex].getType()
+            .compatibleWith(actualParameter.getExpression().struct)) {
+            report_error(
+                "Line " + actualParameter.getLine() + " Parameter " + (actualParameterIndex + 1)
+                    + " wrong type");
+        }
+
+        actualParameterIndex++;
+    }
+
+    @Override public void visit(TermCondFactor termCondFactor) {
+        if (termCondFactor.getExpression().struct != boolType.getType()) {
+            report_error("Line " + termCondFactor.getLine() + " operand not boolean type");
+        }
+
+        termCondFactor.struct = termCondFactor.getExpression().struct;
+    }
+
+    @Override public void visit(CondOpFactor condOpFactor) {
+        if (!condOpFactor.getExpression().struct
+            .compatibleWith(condOpFactor.getExpression1().struct)) {
+            report_error("Line " + condOpFactor.getLine() + " wrong operand types");
+        }
+
+        condOpFactor.struct = boolType.getType();
+    }
+
+    @Override public void visit(TerminalCondFactor terminalCondFactor) {
+        terminalCondFactor.struct = terminalCondFactor.getCondition_factor().struct;
+    }
+
+    @Override public void visit(CondFactorList condFactorList) {
+        if (condFactorList.getCondition_factor().struct != boolType.getType()
+            || condFactorList.getCondition_factor_list().struct != boolType.getType()) {
+            report_error("Line " + condFactorList.getLine() + " Incompatible types");
+        }
+
+        condFactorList.struct = condFactorList.getCondition_factor().struct;
+    }
+
+    @Override public void visit(CondTerm condTerm) {
+        condTerm.struct = condTerm.getCondition_factor_list().struct;
+    }
+
+    @Override public void visit(CondTermList condTermList) {
+        if (condTermList.getCondition_term().struct != boolType.getType()
+            || condTermList.getCondition_term_list().struct != boolType.getType()) {
+            report_error("Line " + condTermList.getLine() + " Incompatible types");
+        }
+
+        condTermList.struct = condTermList.getCondition_term().struct;
+    }
+
+    @Override public void visit(CondTerminalTerm condTerminalTerm) {
+        condTerminalTerm.struct = condTerminalTerm.getCondition_term().struct;
+    }
+
+    @Override public void visit(CondExpression condExpression) {
+        condExpression.struct = condExpression.getCondition_term_list().struct;
+    }
+
+    @Override public void visit(IfStatement ifStatement) {
+        controlPaths++;
+    }
+
+    @Override public void visit(DoStatement doStatement) {
+        controlPaths++;
     }
 
     @Override public void visit(Type Type) {
@@ -321,6 +429,9 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         }
 
         currentType = Type.struct;
+        if (typeNode.getName().equals("bool")) {
+            foundBool = true;
+        }
         report_debug("Type " + Type.getLine());
     }
 

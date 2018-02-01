@@ -1,0 +1,26 @@
+program saban
+    int i;
+{
+    void main()
+
+    {
+       i = 1;
+
+       do {
+          do {
+            i++;
+            if (i == 4)
+            {
+                break;
+            }
+          } while (i < 100);
+          print (i); print (eol);
+          i++;
+
+          if (i == 5)
+             break;
+       } while (i < 100);
+
+       print(i);
+    }
+}

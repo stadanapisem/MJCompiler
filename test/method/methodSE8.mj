@@ -1,0 +1,12 @@
+program saban
+{
+    char f(int asd) {
+        if (asd > 0)
+           return 'n';
+    }
+
+    void main()
+    {
+
+    }
+}

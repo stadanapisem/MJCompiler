@@ -55,11 +55,27 @@ nonterminal Statement statement;
 nonterminal Print_statement print_statement;
 nonterminal Read_statement read_statement;
 nonterminal Return_statement return_statement;
+nonterminal
+            If_statement if_statement;
+nonterminal If_statement_header if_statement_header;
+nonterminal Do_statement do_statement;
+nonterminal Break_statement break_statement;
+nonterminal Continue_statement continue_statement;
+nonterminal
+            Optional_else optional_else;
+nonterminal Else_jmp_fix else_jmp_fix;
+nonterminal Remember_pc remember_pc;
 nonterminal Designator_statement designator_statement;
-nonterminal Actual_parameters actual_parameters;
+nonterminal Actual_parameter actual_parameter;
+nonterminal Actual_parameter_section actual_parameter_section;
+nonterminal Actual_parameter_list actual_parameter_list;
+nonterminal Method_call_ident method_call_ident;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj designator, array_ident;
 nonterminal java.lang.String addition_operator, multiplication_operator;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct term, factor, expression, addition_term_list, multiplication_factor_list;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct condition, condition_term_list, condition_term, condition_factor_list, condition_factor;
+nonterminal java.lang.String rel_operator, or_operator, and_operator;
+precedence left ELSE;
 // **************************************************
 //
 // PRODUCTIONS
@@ -130,20 +146,41 @@ statement_list ::= (StatementList) statement_list:s1 statement:s2 {: RESULT=new 
   statement ::= designator_statement:d1 SEMI {: RESULT=new StatementDerived1(d1); RESULT.setLine(d1left); :}
               | read_statement:r1 SEMI {: RESULT=new StatementDerived2(r1); RESULT.setLine(r1left); :}
               | print_statement:p1 SEMI {: RESULT=new StatementDerived3(p1); RESULT.setLine(p1left); :}
-              | return_statement:r1 SEMI {: RESULT=new StatementDerived4(r1); RESULT.setLine(r1left); :};
-    return_statement ::= (ReturnStatement) RETURN expression:e1 {: RESULT=new ReturnStatement(e1); RESULT.setLine(e1left); :};
+              | return_statement:r1 SEMI {: RESULT=new StatementDerived4(r1); RESULT.setLine(r1left); :}
+              | if_statement:i1 {: RESULT=new StatementDerived5(i1); RESULT.setLine(i1left); :}
+              | (DoStatement) do_statement:d1 SEMI {: RESULT=new DoStatement(d1); RESULT.setLine(d1left); :}
+              | (BreakStatement) break_statement:b1 SEMI {: RESULT=new BreakStatement(b1); RESULT.setLine(b1left); :}
+              | (ContinueStatement) continue_statement:c1 SEMI {: RESULT=new ContinueStatement(c1); RESULT.setLine(c1left); :}
+              | LBRACE statement_list:s1 RBRACE {: RESULT=new StatementDerived6(s1); RESULT.setLine(s1left); :};
+    return_statement ::= (ReturnStatement) RETURN expression:e1 {: RESULT=new ReturnStatement(e1); RESULT.setLine(e1left); :}
+                       | (ReturnVoid) RETURN {: RESULT=new ReturnVoid(); :};
     read_statement ::= (ReadStatement) READ LPAREN designator:d1 RPAREN {: RESULT=new ReadStatement(d1); RESULT.setLine(d1left); :};
     print_statement ::= (PrintStatement) PRINT LPAREN expression:e1 RPAREN {: RESULT=new PrintStatement(e1); RESULT.setLine(e1left); :}
                       | (ComplexPrintStatement) PRINT LPAREN expression:e1 COMMA numeric_const:n2 RPAREN {: RESULT=new ComplexPrintStatement(e1, n2); RESULT.setLine(e1left); :};
+    if_statement ::= (IfStatement) if_statement_header:i1 statement:s2 optional_else:o3 {: RESULT=new IfStatement(i1, s2, o3); RESULT.setLine(i1left); :};
+      if_statement_header ::= IF LPAREN condition:c1 RPAREN {: RESULT=new If_statement_headerDerived1(c1); RESULT.setLine(c1left); :};
+      optional_else ::= else_jmp_fix:e1 statement:s2 {: RESULT=new Optional_elseDerived1(e1, s2); RESULT.setLine(e1left); :}
+                      | {: RESULT=new Optional_elseDerived2(); :} /* epsilon */;
+        else_jmp_fix ::= (ElseFix) ELSE {: RESULT=new ElseFix(); :};
+    do_statement ::= remember_pc:r1 statement:s2 WHILE LPAREN condition:c3 RPAREN {: RESULT=new Do_statementDerived1(r1, s2, c3); RESULT.setLine(r1left); :};
+        remember_pc ::= (RememberPc) DO {: RESULT=new RememberPc(); :};
+    break_statement ::= BREAK {: RESULT=new Break_statementDerived1(); :};
+    continue_statement ::= CONTINUE {: RESULT=new Continue_statementDerived1(); :};
 
 // ***************** DESIGNATORS ********************
 designator_statement ::= (Assignment) designator:d1 ASSIGN expression:e2 {: RESULT=new Assignment(d1, e2); RESULT.setLine(d1left); :}
                        | (Increment) designator:d1 INC {: RESULT=new Increment(d1); RESULT.setLine(d1left); :}
-                       | (Decrement) designator:d1 DEC {: RESULT=new Decrement(d1); RESULT.setLine(d1left); :};
+                       | (Decrement) designator:d1 DEC {: RESULT=new Decrement(d1); RESULT.setLine(d1left); :}
+                       | (MethodCallDesignator) method_call_ident:m1 actual_parameter_section:a2 RPAREN {: RESULT=new MethodCallDesignator(m1, a2); RESULT.setLine(m1left); :};
+    method_call_ident ::= (MethodCallIdent) designator:d1 LPAREN {: RESULT=new MethodCallIdent(d1); RESULT.setLine(d1left); :};
   designator ::= (DesignatorSingle) IDENT: id {: RESULT=new DesignatorSingle(id); RESULT.setLine(idleft); :}
                | (DesignatorArray) array_ident:a1 expression:e2 RSQUARE {: RESULT=new DesignatorArray(a1, e2); RESULT.setLine(a1left); :};
     array_ident ::= (ArrayIdent) IDENT: id LSQUARE {: RESULT=new ArrayIdent(id); RESULT.setLine(idleft); :};
-    actual_parameters ::= {: RESULT=new Actual_parametersDerived1(); :} /* epsilon */;
+    actual_parameter_section ::= actual_parameter_list:a1 {: RESULT=new Actual_parameter_sectionDerived1(a1); RESULT.setLine(a1left); :}
+                               | {: RESULT=new Actual_parameter_sectionDerived2(); :} /* epsilon */;
+      actual_parameter_list ::= actual_parameter_list:a1 COMMA actual_parameter:a2 {: RESULT=new Actual_parameter_listDerived1(a1, a2); RESULT.setLine(a1left); :}
+                              | actual_parameter:a1 {: RESULT=new Actual_parameter_listDerived2(a1); RESULT.setLine(a1left); :};
+        actual_parameter ::= (ActualParameter) expression:e1 {: RESULT=new ActualParameter(e1); RESULT.setLine(e1left); :};
 
 // ***************** EXPRESSIONS ********************
 expression ::= (AddExpression) addition_term_list:a1 {: RESULT=new AddExpression(a1); RESULT.setLine(a1left); :};
@@ -163,4 +200,22 @@ expression ::= (AddExpression) addition_term_list:a1 {: RESULT=new AddExpression
            | (ConstructorFactor) NEW type:t1 {: RESULT=new ConstructorFactor(t1); RESULT.setLine(t1left); :}
            | (ConstructorArrayFactor) NEW type:t1 LSQUARE expression:e2 RSQUARE {: RESULT=new ConstructorArrayFactor(t1, e2); RESULT.setLine(t1left); :}
            | (DesignatorFactor) designator:d1 {: RESULT=new DesignatorFactor(d1); RESULT.setLine(d1left); :}
-           | (MethodCall) designator:d1 LPAREN actual_parameters:a2 RPAREN {: RESULT=new MethodCall(d1, a2); RESULT.setLine(d1left); :};
+           | (MethodCall) method_call_ident:m1 actual_parameter_section:a2 RPAREN {: RESULT=new MethodCall(m1, a2); RESULT.setLine(m1left); :};
+
+// ***************** CONDITIONS *********************
+condition ::= (CondExpression) condition_term_list:c1 {: RESULT=new CondExpression(c1); RESULT.setLine(c1left); :};
+  condition_term_list ::= (CondTermList) condition_term_list:c1 or_operator:o2 condition_term:c3 {: RESULT=new CondTermList(c1, o2, c3); RESULT.setLine(c1left); :}
+                        | (CondTerminalTerm) condition_term:c1 {: RESULT=new CondTerminalTerm(c1); RESULT.setLine(c1left); :};
+     or_operator ::= (OperatorOr) OR {: RESULT=new OperatorOr(); :};
+    condition_term ::= (CondTerm) condition_factor_list:c1 {: RESULT=new CondTerm(c1); RESULT.setLine(c1left); :};
+  condition_factor_list ::= (CondFactorList) condition_factor_list:c1 and_operator:a2 condition_factor:c3 {: RESULT=new CondFactorList(c1, a2, c3); RESULT.setLine(c1left); :}
+                          | (TerminalCondFactor) condition_factor:c1 {: RESULT=new TerminalCondFactor(c1); RESULT.setLine(c1left); :};
+      and_operator ::= (OperatorAnd) AND {: RESULT=new OperatorAnd(); :};
+    condition_factor ::= (TermCondFactor) expression:e1 {: RESULT=new TermCondFactor(e1); RESULT.setLine(e1left); :}
+                       | (CondOpFactor) expression:e1 rel_operator:r2 expression:e3 {: RESULT=new CondOpFactor(e1, r2, e3); RESULT.setLine(e1left); :};
+  rel_operator ::= (OperatorEq) EQ {: RESULT=new OperatorEq(); :}
+                 | (OperatorNeq) NEQ {: RESULT=new OperatorNeq(); :}
+                 | (OperatorGrt) GRT {: RESULT=new OperatorGrt(); :}
+                 | (OperatorGrteq) GRTEQ {: RESULT=new OperatorGrteq(); :}
+                 | (OperatorLss) LSS {: RESULT=new OperatorLss(); :}
+                 | (OperatorLeq) LEQ {: RESULT=new OperatorLeq(); :};

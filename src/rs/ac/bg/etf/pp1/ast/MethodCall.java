@@ -1,36 +1,36 @@
 // generated with ast extension for cup
 // version 0.8
-// 31/0/2018 13:17:49
+// 1/1/2018 17:58:9
 
 
 package rs.ac.bg.etf.pp1.ast;
 
 public class MethodCall extends Factor {
 
-    private Designator designator;
-    private Actual_parameters actual_parameters;
+    private Method_call_ident method_call_ident;
+    private Actual_parameter_section actual_parameter_section;
 
-    public MethodCall (Designator designator, Actual_parameters actual_parameters) {
-        this.designator=designator;
-        if(designator!=null) designator.setParent(this);
-        this.actual_parameters=actual_parameters;
-        if(actual_parameters!=null) actual_parameters.setParent(this);
+    public MethodCall (Method_call_ident method_call_ident, Actual_parameter_section actual_parameter_section) {
+        this.method_call_ident=method_call_ident;
+        if(method_call_ident!=null) method_call_ident.setParent(this);
+        this.actual_parameter_section=actual_parameter_section;
+        if(actual_parameter_section!=null) actual_parameter_section.setParent(this);
     }
 
-    public Designator getDesignator() {
-        return designator;
+    public Method_call_ident getMethod_call_ident() {
+        return method_call_ident;
     }
 
-    public void setDesignator(Designator designator) {
-        this.designator=designator;
+    public void setMethod_call_ident(Method_call_ident method_call_ident) {
+        this.method_call_ident=method_call_ident;
     }
 
-    public Actual_parameters getActual_parameters() {
-        return actual_parameters;
+    public Actual_parameter_section getActual_parameter_section() {
+        return actual_parameter_section;
     }
 
-    public void setActual_parameters(Actual_parameters actual_parameters) {
-        this.actual_parameters=actual_parameters;
+    public void setActual_parameter_section(Actual_parameter_section actual_parameter_section) {
+        this.actual_parameter_section=actual_parameter_section;
     }
 
     public void accept(Visitor visitor) {
@@ -38,19 +38,19 @@ public class MethodCall extends Factor {
     }
 
     public void childrenAccept(Visitor visitor) {
-        if(designator!=null) designator.accept(visitor);
-        if(actual_parameters!=null) actual_parameters.accept(visitor);
+        if(method_call_ident!=null) method_call_ident.accept(visitor);
+        if(actual_parameter_section!=null) actual_parameter_section.accept(visitor);
     }
 
     public void traverseTopDown(Visitor visitor) {
         accept(visitor);
-        if(designator!=null) designator.traverseTopDown(visitor);
-        if(actual_parameters!=null) actual_parameters.traverseTopDown(visitor);
+        if(method_call_ident!=null) method_call_ident.traverseTopDown(visitor);
+        if(actual_parameter_section!=null) actual_parameter_section.traverseTopDown(visitor);
     }
 
     public void traverseBottomUp(Visitor visitor) {
-        if(designator!=null) designator.traverseBottomUp(visitor);
-        if(actual_parameters!=null) actual_parameters.traverseBottomUp(visitor);
+        if(method_call_ident!=null) method_call_ident.traverseBottomUp(visitor);
+        if(actual_parameter_section!=null) actual_parameter_section.traverseBottomUp(visitor);
         accept(visitor);
     }
 
@@ -59,14 +59,14 @@ public class MethodCall extends Factor {
         buffer.append(tab);
         buffer.append("MethodCall(\n");
 
-        if(designator!=null)
-            buffer.append(designator.toString("  "+tab));
+        if(method_call_ident!=null)
+            buffer.append(method_call_ident.toString("  "+tab));
         else
             buffer.append(tab+"  null");
         buffer.append("\n");
 
-        if(actual_parameters!=null)
-            buffer.append(actual_parameters.toString("  "+tab));
+        if(actual_parameter_section!=null)
+            buffer.append(actual_parameter_section.toString("  "+tab));
         else
             buffer.append(tab+"  null");
         buffer.append("\n");

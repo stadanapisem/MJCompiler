@@ -9,6 +9,8 @@ import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.concepts.Struct;
 
+import java.util.Stack;
+
 public class CodeGenerator extends VisitorAdaptor {
 
     static {
@@ -20,9 +22,18 @@ public class CodeGenerator extends VisitorAdaptor {
     private int mainPC = -1;
     private boolean returnFound = false;
     private String programName;
+    private int varCount = 0;
+
+    private Stack<Integer> fixUpAnd, fixUpOr, fixUpAdr, breakPc, continuePc, breaksNumber;
 
     public CodeGenerator() {
         logger = Logger.getLogger(SemanticAnalyzer.class);
+        fixUpAnd = new Stack<>();
+        fixUpOr = new Stack<>();
+        fixUpAdr = new Stack<>();
+        breakPc = new Stack<>();
+        continuePc = new Stack<>();
+        breaksNumber = new Stack<>();
     }
 
     private void report_info(String msg) {
@@ -76,14 +87,23 @@ public class CodeGenerator extends VisitorAdaptor {
         returnFound = true;
     }
 
+    @Override public void visit(ReturnVoid returnVoid) {
+        Code.put(Code.exit);
+        Code.put(Code.return_);
+        returnFound = true;
+    }
+
     @Override public void visit(ProgramName programName) {
         this.programName = programName.getId();
     }
 
     @Override public void visit(Program program) {
-        CounterVisitor.VariableCounter varCount = new CounterVisitor.VariableCounter();
-        program.traverseTopDown(varCount);
-        Code.dataSize = varCount.getCounter();
+        varCount = 0;
+        program.getProgram_name().obj.getLocalSymbols().forEach(tmp -> {
+            if (tmp.getKind() == Obj.Var)
+                varCount++;
+        });
+        Code.dataSize = varCount;
 
         if (mainPC == -1) {
             report_error("Main function not found!");
@@ -255,6 +275,111 @@ public class CodeGenerator extends VisitorAdaptor {
         signMod.string = "27";
     }
 
+    @Override public void visit(OperatorEq operatorEq) {
+        operatorEq.string = "0";
+    }
+
+    @Override public void visit(OperatorNeq operatorNeq) {
+        operatorNeq.string = "1";
+    }
+
+    @Override public void visit(OperatorLss operatorLss) {
+        operatorLss.string = "2";
+    }
+
+    @Override public void visit(OperatorLeq operatorLeq) {
+        operatorLeq.string = "3";
+    }
+
+    @Override public void visit(OperatorGrt operatorGrt) {
+        operatorGrt.string = "4";
+    }
+
+    @Override public void visit(OperatorGrteq operatorGrteq) {
+        operatorGrteq.string = "5";
+    }
+
+    @Override public void visit(CondOpFactor condOpFactor) {
+        Code.putFalseJump(Integer.parseInt(condOpFactor.getRel_operator().string), 0);
+        fixUpAnd.push(Code.pc - 2);
+    }
+
+    @Override public void visit(TermCondFactor termCondFactor) {
+        Code.loadConst(0);
+        Code.putFalseJump(Code.ne, 0);
+        fixUpAnd.push(Code.pc - 2);
+    }
+
+    @Override public void visit(CondTerminalTerm condTerminalTerm) {
+        Code.putJump(0);
+        fixUpOr.push(Code.pc - 2);
+
+        while (!fixUpAnd.empty()) {
+            Code.fixup(fixUpAnd.pop());
+        }
+    }
+
+    @Override public void visit(CondTermList condTermList) {
+        Code.putJump(0);
+        fixUpOr.push(Code.pc - 2);
+
+        while (!fixUpAnd.empty()) {
+            Code.fixup(fixUpAnd.pop());
+        }
+    }
+
+    @Override public void visit(CondExpression condExpression) {
+        Code.putJump(0);
+        fixUpAdr.push(Code.pc - 2);
+
+        while (!fixUpOr.empty()) {
+            Code.fixup(fixUpOr.pop());
+        }
+    }
+
+    @Override public void visit(IfStatement ifStatement) {
+        Code.fixup(fixUpAdr.pop());
+    }
+
+    @Override public void visit(ElseFix elseFix) {
+        Code.pc += 3;
+        Code.fixup(fixUpAdr.pop());
+        Code.pc -= 3;
+
+        Code.putJump(0);
+        fixUpAdr.push(Code.pc - 2);
+    }
+
+    @Override public void visit(RememberPc rememberPc) {
+        continuePc.push(Code.pc);
+        breaksNumber.push(0);
+    }
+
+    @Override public void visit(DoStatement doStatement) {
+        Code.putJump(continuePc.peek());
+        Code.fixup(fixUpAdr.pop());
+
+        if (!breaksNumber.empty()) {
+            int numOfBreaks = breaksNumber.pop();
+            while (numOfBreaks > 0) {
+                numOfBreaks--;
+                Code.fixup(breakPc.pop());
+            }
+        }
+
+        continuePc.pop();
+    }
+
+    @Override public void visit(ContinueStatement continueStatement) {
+        Code.putJump(continuePc.peek());
+    }
+
+    @Override public void visit(BreakStatement breakStatement) {
+        Code.putJump(0);
+        breakPc.push(Code.pc - 2);
+        breaksNumber.push(breaksNumber.pop() + 1);
+    }
+
     @Override public void visit(Term Term) {
         Term.struct = Term.getMultiplication_factor_list().struct;
     }
@@ -283,7 +408,18 @@ public class CodeGenerator extends VisitorAdaptor {
     }
 
     @Override public void visit(MethodCall methodCall) {
-        int offset = methodCall.getDesignator().obj.getAdr() - Code.pc;
+        int offset =
+            ((MethodCallIdent) methodCall.getMethod_call_ident()).getDesignator().obj.getAdr()
+                - Code.pc;
+
+        Code.put(Code.call);
+        Code.put2(offset);
+    }
+
+    @Override public void visit(MethodCallDesignator methodCallDesignator) {
+        int offset =
+            ((MethodCallIdent) methodCallDesignator.getMethod_call_ident()).getDesignator().obj
+                .getAdr() - Code.pc;
 
         Code.put(Code.call);
         Code.put2(offset);
