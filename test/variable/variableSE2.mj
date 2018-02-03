@@ -1,0 +1,11 @@
+program saban
+   int a, b;
+{
+   void main() {
+       a = 1;
+       b = 2;
+
+       print (a); print(eol);
+       print (b); print(eol);
+   }
+}

@@ -5,7 +5,7 @@ import rs.ac.bg.etf.pp1.ast.*;
 
 // *****************  KEYWORDS **********************
 terminal PROGRAM, CONST, VOID, BREAK, CLASS, IF, ELSE, NEW, RETURN, DO, WHILE, EXTENDS;
-terminal CONTINUE, PRINT, READ;
+terminal CONTINUE, PRINT, READ, THIS;
 
 // *****************  OPERATORS *********************
 terminal PLUS, MINUS, MUL, DIV, MOD, EQ, NEQ, GRT, GRTEQ, LSS, LEQ, AND, OR, ASSIGN, INC, DEC;
@@ -25,9 +25,10 @@ nonterminal rs.etf.pp1.symboltable.concepts.Struct type, method_return_type;
 nonterminal declaration_section, declaration,
             const_declaration_line, const_id_list, const_identifier,
             var_declaration_line, var_declaration_list, var_id_list, var_id, var_identifier,
-            class_declaration, class_identifier,
+            optional_extends,
             method_decl_section, optional_method_decl_section, method_decl_list, method_decl,  method_definition,
             formal_parameter_section, formal_parameter_list, formal_parameter;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj class_declaration, class_identifier;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj const_id, method_identifier;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj constant, char_const, numeric_const, bool_const;
 
@@ -35,7 +36,7 @@ nonterminal statement_list, statement, print_statement, read_statement, return_s
             if_statement, if_statement_header, do_statement, break_statement, continue_statement,
             optional_else, else_jmp_fix, remember_pc;
 nonterminal designator_statement, actual_parameter, actual_parameter_section, actual_parameter_list, method_call_ident;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj designator, array_ident;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj designator, array_ident, array_fld_ident, array_fld_header, array_fld_fix;
 nonterminal java.lang.String addition_operator, multiplication_operator;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct term, factor, expression, addition_term_list, multiplication_factor_list;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct condition, condition_term_list, condition_term, condition_factor_list, condition_factor;
@@ -86,8 +87,10 @@ declaration_section ::= (DeclarationSection) declaration_section declaration
            var_identifier ::= (VarIdentifier) IDENT: id;
 
     // *** CLASS DECLARATION
-    class_declaration ::= (ClassDeclaration) CLASS class_identifier LBRACE var_declaration_list optional_method_decl_section RBRACE;
+    class_declaration ::= (ClassDeclaration) CLASS class_identifier optional_extends LBRACE var_declaration_list optional_method_decl_section RBRACE;
       class_identifier ::= (ClassIdentifier) IDENT: id;
+      optional_extends ::= (Extends) EXTENDS type
+                         | /* epsilon */;
 
     // *** METHOD DECLARATION
     optional_method_decl_section ::= (OptionalMethodDeclSection) method_decl_section
@@ -139,8 +142,14 @@ designator_statement ::= (Assignment) designator ASSIGN expression
                        | (MethodCallDesignator) method_call_ident actual_parameter_section RPAREN;
     method_call_ident ::= (MethodCallIdent) designator LPAREN;
   designator ::= (DesignatorSingle) IDENT: id
-               | (DesignatorArray) array_ident expression RSQUARE;
+               | (DesignatorArray) array_ident expression RSQUARE
+               | (DesignatorFieldSingle) designator DOT IDENT: id
+               | (DesignatorArrayFld) array_fld_header array_fld_fix
+               | (DesignatorThis) THIS DOT IDENT: id;
     array_ident ::= (ArrayIdent) IDENT: id LSQUARE;
+    array_fld_ident ::= (ArrayFldIdent) IDENT: id LSQUARE;
+      array_fld_header ::= (DesignatorFieldArray) designator DOT array_fld_ident;
+      array_fld_fix ::= expression RSQUARE;
     actual_parameter_section ::= actual_parameter_list
                                | /* epsilon */;
       actual_parameter_list ::= actual_parameter_list COMMA actual_parameter

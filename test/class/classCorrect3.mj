@@ -1,0 +1,42 @@
+program saban
+
+    class base {
+        int x;
+      {
+          void setX(int tmp) {
+              x = tmp;
+          }
+
+          int getX() {
+              return x;
+          }
+      }
+    }
+
+    class derived extends base {
+        int y;
+      {
+        void prnt() {
+            print (x); print(eol);
+            print (y); print(eol);
+        }
+
+        void setY(int tmp) {
+            y = tmp;
+        }
+      }
+    }
+{
+    void main()
+        derived a[]; base b;
+    {
+       //b = new derived;
+       a = new derived[3];
+       a[0] = new derived;
+       a[0].setX(4);
+       //print (a.x);
+        a[0].setY(6);
+
+       a[0].prnt();
+    }
+}

@@ -1,0 +1,12 @@
+program saban
+
+{
+    void main()
+      bool b;
+    {
+      b = true;
+      print(b); print(eol);
+      b = false;
+      print(b); print(eol);
+    }
+}

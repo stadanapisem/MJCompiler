@@ -84,7 +84,7 @@
 
     <target name="run-vm">
         <java classpath="${lib.dir}/mj-runtime.jar" classname="rs.etf.pp1.mj.runtime.Run" fork="true" failonerror="true">
-            <arg line="${test.file}" />
+            <arg line="${test.file} -debug" />
         </java>
     </target>
 

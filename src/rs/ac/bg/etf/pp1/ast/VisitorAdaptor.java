@@ -1,6 +1,6 @@
 // generated with ast extension for cup
 // version 0.8
-// 1/1/2018 17:58:9
+// 3/1/2018 21:45:32
 
 
 package rs.ac.bg.etf.pp1.ast;
@@ -17,7 +17,9 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(Method_call_ident method_call_ident) { }
     public void visit(Condition condition) { }
     public void visit(Method_definition method_definition) { }
+    public void visit(Optional_extends optional_extends) { }
     public void visit(Const_identifier const_identifier) { }
+    public void visit(Array_fld_header array_fld_header) { }
     public void visit(Method_decl_list method_decl_list) { }
     public void visit(Const_declaration_line const_declaration_line) { }
     public void visit(Actual_parameter actual_parameter) { }
@@ -49,6 +51,7 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(Return_statement return_statement) { }
     public void visit(Condition_factor_list condition_factor_list) { }
     public void visit(Bool_const bool_const) { }
+    public void visit(Array_fld_fix array_fld_fix) { }
     public void visit(Const_id const_id) { }
     public void visit(Actual_parameter_list actual_parameter_list) { }
     public void visit(Class_declaration class_declaration) { }
@@ -65,6 +68,7 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(Optional_else optional_else) { }
     public void visit(Factor factor) { }
     public void visit(Declaration declaration) { }
+    public void visit(Array_fld_ident array_fld_ident) { }
     public void visit(Method_decl method_decl) { }
     public void visit(If_statement_header if_statement_header) { }
     public void visit(Statement_list statement_list) { }
@@ -108,7 +112,13 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(Actual_parameter_listDerived1 Actual_parameter_listDerived1) { visit(); }
     public void visit(Actual_parameter_sectionDerived2 Actual_parameter_sectionDerived2) { visit(); }
     public void visit(Actual_parameter_sectionDerived1 Actual_parameter_sectionDerived1) { visit(); }
+    public void visit(Array_fld_fixDerived1 Array_fld_fixDerived1) { visit(); }
+    public void visit(DesignatorFieldArray DesignatorFieldArray) { visit(); }
+    public void visit(ArrayFldIdent ArrayFldIdent) { visit(); }
     public void visit(ArrayIdent ArrayIdent) { visit(); }
+    public void visit(DesignatorThis DesignatorThis) { visit(); }
+    public void visit(DesignatorArrayFld DesignatorArrayFld) { visit(); }
+    public void visit(DesignatorFieldSingle DesignatorFieldSingle) { visit(); }
     public void visit(DesignatorArray DesignatorArray) { visit(); }
     public void visit(DesignatorSingle DesignatorSingle) { visit(); }
     public void visit(MethodCallIdent MethodCallIdent) { visit(); }
@@ -155,6 +165,8 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(MethodDeclSection MethodDeclSection) { visit(); }
     public void visit(NoMethodSection NoMethodSection) { visit(); }
     public void visit(OptionalMethodDeclSection OptionalMethodDeclSection) { visit(); }
+    public void visit(Optional_extendsDerived1 Optional_extendsDerived1) { visit(); }
+    public void visit(Extends Extends) { visit(); }
     public void visit(ClassIdentifier ClassIdentifier) { visit(); }
     public void visit(ClassDeclaration ClassDeclaration) { visit(); }
     public void visit(VarIdentifier VarIdentifier) { visit(); }

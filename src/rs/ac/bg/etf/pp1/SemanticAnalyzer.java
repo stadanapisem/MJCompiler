@@ -8,7 +8,12 @@ import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.concepts.Struct;
 
+import java.util.Collection;
+
 public class SemanticAnalyzer extends VisitorAdaptor {
+
+    public static final Integer MAX_INHERITANCE_LEVEL = 10;
+    public static Obj boolType = null;
 
     static {
         DOMConfigurator.configure(Log4JUtils.instance().findLoggerConfigFile());
@@ -19,17 +24,18 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     private Logger logger;
     private Struct currentType;
 
-    private Obj currentMethod, currentMethodCall, boolType;
+    private Obj currentMethod, currentMethodCall;
     private boolean foundBool = false;
     private int level = 0;
     private int actualParameterIndex = 0;
     private int controlPaths = 0;
+    private boolean insideClass = false;
 
     public SemanticAnalyzer() {
         logger = Logger.getLogger(SemanticAnalyzer.class);
 
         Tab.init();
-        boolType = Tab.insert(Obj.Type, "bool", Tab.charType);
+        boolType = Tab.insert(Obj.Type, "bool", new Struct(Struct.Char));
     }
 
     private void report_info(String msg) {
@@ -51,7 +57,8 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         if (Tab.find(ident) != Tab.noObj) {
             report_error("Line " + VarIDArray.getLine() + " Symbol already defined");
         } else {
-            Obj tmp = Tab.insert(Obj.Var, ident, new Struct(Struct.Array, currentType));
+            Obj tmp = Tab.insert(insideClass && currentMethod == null ? Obj.Fld : Obj.Var, ident,
+                new Struct(Struct.Array, currentType));
             tmp.setLevel(level);
 
             report_info("Line " + VarIDArray.getLine() + " Defined array variable: " + ident);
@@ -64,7 +71,8 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         if (Tab.find(ident) != Tab.noObj) {
             report_error("Line " + VarID.getLine() + " Symbol already defined");
         } else {
-            Obj tmp = Tab.insert(Obj.Var, ident, currentType);
+            Obj tmp = Tab.insert(insideClass && currentMethod == null ? Obj.Fld : Obj.Var, ident,
+                currentType);
             tmp.setLevel(level);
 
             report_info("Line " + VarID.getLine() + " Defined variable: " + ident);
@@ -78,7 +86,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 
     @Override public void visit(BoolConst BoolConst) {
         BoolConst.obj =
-            new Obj(Obj.Con, "", Tab.charType, BoolConst.getVar() ? 1 : 0, Obj.NO_VALUE);
+            new Obj(Obj.Con, "", boolType.getType(), BoolConst.getVar() ? 1 : 0, Obj.NO_VALUE);
         report_debug("Line " + BoolConst.getLine() + " Found Bool constant");
     }
 
@@ -145,6 +153,10 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         returnsFound = 0;
         controlPaths = 1;
 
+        if (insideClass) {
+            Tab.insert(Obj.Var, "this", Tab.noType);
+        }
+
         report_info(
             "Line " + MethodIdentifier.getLine() + " Found method " + MethodIdentifier.getId());
     }
@@ -166,10 +178,10 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     @Override public void visit(MethodDefinition MethodDefinition) {
         if (returnsFound == 0 && currentMethod.getType() != Tab.noType) {
             report_error("Line " + MethodDefinition.getLine() + " method missing return statement");
-        } else if (returnsFound < controlPaths && currentMethod.getType() != Tab.noType) {
+        } /*else if (returnsFound < controlPaths && currentMethod.getType() != Tab.noType) {
             report_error("In method " + currentMethod.getName()
                 + " not all control paths have a return statement");
-        }
+        }*/
 
         //Tab.chainLocalSymbols(currentMethod);
         Tab.closeScope();
@@ -267,7 +279,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     @Override public void visit(Assignment assignment) {
         Obj tmp = assignment.getDesignator().obj;
 
-        if (tmp.getKind() == Obj.Var || tmp.getKind() == Obj.Elem) {
+        if (tmp.getKind() == Obj.Var || tmp.getKind() == Obj.Elem || tmp.getKind() == Obj.Fld) {
             if (!assignment.getExpression().struct.assignableTo(tmp.getType())) {
                 report_error("Line " + assignment.getLine() + " assignment types not compatible");
             }
@@ -305,8 +317,21 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     @Override public void visit(DesignatorSingle DesignatorSingle) {
         Obj tmp = Tab.find(DesignatorSingle.getId());
         if (tmp == Tab.noObj) {
-            report_error("Line " + DesignatorSingle.getLine() + " name " + DesignatorSingle.getId()
-                + " not declared");
+
+            /*if (insideClass) { // maybe we need inherited fld/meth
+                String superName = "super." + DesignatorSingle.getId();
+
+                for (int i = 1; tmp == Tab.noObj && i < MAX_INHERITANCE_LEVEL; i++) {
+                    tmp = Tab.find(superName);
+                    superName = "super." + superName;
+                }
+            }*/
+
+            if (tmp == Tab.noObj) {
+                report_error(
+                    "Line " + DesignatorSingle.getLine() + " name " + DesignatorSingle.getId()
+                        + " not declared");
+            }
         }
 
         DesignatorSingle.obj = tmp;
@@ -320,6 +345,57 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         designatorArray.obj = designatorArray.getArray_ident().obj;
     }
 
+    private Obj findLocalSymbol(Obj var, String symbol) {
+        Collection<Obj> objs = var.getType().getMembers().symbols();
+        for (Obj tmp : objs) {
+            if (tmp.getName().equals(symbol))
+                return tmp;
+        }
+
+        return Tab.noObj;
+    }
+
+    @Override public void visit(DesignatorFieldSingle designatorFieldSingle) {
+        Obj tmp = findLocalSymbol(designatorFieldSingle.getDesignator().obj,
+            designatorFieldSingle.getId());
+
+        if (tmp == Tab.noObj) {
+            /*if (designatorFieldSingle.getDesignator().obj.getType().getKind() == Struct.Class) { // maybe we need inherited fld/meth
+                String superName = "super." + designatorFieldSingle.getId();
+
+                for (int i = 1; tmp == Tab.noObj && i < MAX_INHERITANCE_LEVEL; i++) {
+                    tmp = findLocalSymbol(designatorFieldSingle.getDesignator().obj, superName);
+                    superName = "super." + superName;
+                }
+            }*/
+
+            if (tmp == Tab.noObj) {
+                report_error(
+                    "Line " + designatorFieldSingle.getLine() + " Name " + designatorFieldSingle
+                        .getId() + " not found");
+            }
+        }
+
+        designatorFieldSingle.obj = tmp;
+    }
+
+    @Override public void visit(DesignatorFieldArray designatorFieldArray) {
+        Obj tmp = findLocalSymbol(designatorFieldArray.getDesignator().obj,
+            ((ArrayFldIdent) designatorFieldArray.getArray_fld_ident()).getId());
+
+        if (tmp == Tab.noObj) {
+            report_error("Line " + designatorFieldArray.getLine() + " Name "
+                + ((ArrayFldIdent) designatorFieldArray.getArray_fld_ident()).getId()
+                + " not found");
+        }
+
+        designatorFieldArray.obj = tmp;
+    }
+
+    @Override public void visit(DesignatorArrayFld designatorArrayFld) {
+        designatorArrayFld.obj = designatorArrayFld.getArray_fld_header().obj;
+    }
+
     @Override public void visit(ArrayIdent arrayIdent) {
         String ident = arrayIdent.getId();
         Obj tmp = Tab.find(ident);
@@ -328,6 +404,20 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         }
 
         arrayIdent.obj = new Obj(Obj.Elem, tmp.getName(), tmp.getType().getElemType());
+    }
+
+    @Override public void visit(DesignatorThis designatorThis) {
+        if (!insideClass) {
+            report_error(
+                "Line " + designatorThis.getLine() + " 'this' can only be used in class methods");
+        }
+
+        designatorThis.obj = Tab.find(designatorThis.getId());
+
+        if (designatorThis.obj == Tab.noObj) {
+            report_error("Line " + designatorThis.getLine() + " name " + designatorThis.getId()
+                + " not declared");
+        }
     }
 
     @Override public void visit(MethodCallIdent methodCallIdent) {
@@ -345,6 +435,10 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     @Override public void visit(ActualParameter actualParameter) {
         Obj[] params = currentMethodCall.getLocalSymbols()
             .toArray(new Obj[currentMethodCall.getLocalSymbols().size()]);
+
+        if (params[0].getName().equals("this")) {
+            actualParameterIndex++;
+        }
 
         if (!params[actualParameterIndex].getType()
             .compatibleWith(actualParameter.getExpression().struct)) {
@@ -415,6 +509,48 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         controlPaths++;
     }
 
+    @Override public void visit(ClassDeclaration classDeclaration) {
+        classDeclaration.obj = classDeclaration.getClass_identifier().obj;
+        classDeclaration.obj.getType().setMembers(Tab.currentScope().getLocals());
+
+        Tab.chainLocalSymbols(classDeclaration.obj);
+        Tab.closeScope();
+        insideClass = false;
+    }
+
+    @Override public void visit(ClassIdentifier classIdentifier) {
+        classIdentifier.obj =
+            Tab.insert(Obj.Type, classIdentifier.getId(), new Struct(Struct.Class));
+        Tab.openScope();
+        insideClass = true;
+    }
+
+    @Override public void visit(Extends extend) {
+        Obj parentObj = Tab.find(extend.getType().getTypeName());
+
+        if (parentObj == Tab.noObj) {
+            report_error("Line " + extend.getLine() + " Base class identifier not found");
+        }
+
+        if (parentObj.getType().getKind() != Struct.Class) {
+            report_error("Line " + extend.getLine() + " Cannot extend a non-class type");
+        }
+
+        parentObj.getType().getMembers().symbols().forEach(tmp -> {
+            if (!tmp.getName().equals("_vtable")) {
+                Obj inherited = Tab.insert(tmp.getKind(), tmp.getName(), tmp.getType());
+                inherited.setAdr(tmp.getAdr());
+
+                if (tmp.getKind() == Obj.Meth) {
+                    Tab.openScope();
+                    tmp.getLocalSymbols().forEach(member -> Tab.insert(member.getKind(), member.getName(), member.getType()));
+                    Tab.chainLocalSymbols(inherited);
+                    Tab.closeScope();
+                }
+            }
+        });
+    }
+
     @Override public void visit(Type Type) {
         Obj typeNode = Tab.find(Type.getTypeName());
 
@@ -431,6 +567,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         currentType = Type.struct;
         if (typeNode.getName().equals("bool")) {
             foundBool = true;
+            Type.struct = boolType.getType();
         }
         report_debug("Type " + Type.getLine());
     }

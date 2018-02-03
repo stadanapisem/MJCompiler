@@ -3,6 +3,8 @@ program saban
     char f(int asd) {
         if (asd > 0)
            return 'n';
+
+        return 1;
     }
 
     void main()

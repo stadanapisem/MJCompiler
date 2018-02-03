@@ -7,17 +7,18 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import rs.ac.bg.etf.pp1.ast.SyntaxNode;
 import rs.etf.pp1.mj.runtime.Code;
+import rs.etf.pp1.symboltable.Tab;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 
 public class CodeGeneratorTestMJ {
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    @Rule public TemporaryFolder folder = new TemporaryFolder();
 
-    @Test
-    public void generateCode() {
-        File source = new File("test/method/methodSE8.mj");
+    @Test public void generateCode() {
+        File source = new File("test/class/classCorrect3.mj");
 
         Assert.assertTrue(source.getAbsolutePath(), source.exists());
 
@@ -30,7 +31,7 @@ public class CodeGeneratorTestMJ {
 
             SemanticAnalyzer semanticAnalyzerVisitor = new SemanticAnalyzer();
             prog.traverseBottomUp(semanticAnalyzerVisitor);
-
+            //Tab.dump();
             File objFile = new File("test.obj");
 
             CodeGenerator codeGenerator = new CodeGenerator();

@@ -1,0 +1,9 @@
+program saban
+  int a[];
+{
+  void main() {
+     a = new int[5];
+     a[0] = 3;
+     print(a[0]);
+  }
+}

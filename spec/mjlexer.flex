@@ -48,6 +48,7 @@ import java_cup.runtime.Symbol;
 "print" { return create(sym.PRINT, yytext()); }
 "read" { return create(sym.READ, yytext()); }
 "const" { return create(sym.CONST, yytext()); }
+"this" { return create(sym.THIS, yytext()); }
 "+" { return create(sym.PLUS, yytext()); }
 "-" { return create(sym.MINUS, yytext()); }
 "*" { return create(sym.MUL, yytext()); }

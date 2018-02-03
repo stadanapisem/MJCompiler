@@ -1,0 +1,36 @@
+program saban
+  class base {
+    bool b[], c[];
+    int x;
+  {
+    void init() {
+       x = 1;
+       b = new bool[100];
+       c = new bool[3];
+    }
+
+    void setX(int a) {
+       this.x = a;
+       b[a] = true;
+    }
+
+    int getX() {
+       return x;
+    }
+
+    bool getB(int idx) {
+       return b[idx];
+    }
+  }
+  }
+{
+   void main() base x; {
+      x = new base;
+      x.init();
+      x.setX(4);
+      print(x.getX()); print(eol);
+      print(x.getB(4)); print(eol);
+      print(x.getB(100));
+   }
+}
+

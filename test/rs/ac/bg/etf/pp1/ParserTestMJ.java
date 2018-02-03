@@ -13,7 +13,7 @@ public class ParserTestMJ {
 
     @Test
     public void testSimple() {
-        File source = new File("test/constant/constantSE1.mj");
+        File source = new File("test/class/classCorrect1.mj");
 
         Assert.assertTrue(source.getAbsolutePath(), source.exists());
 

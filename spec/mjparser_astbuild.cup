@@ -5,7 +5,7 @@ import rs.ac.bg.etf.pp1.ast.*;
 
 // *****************  KEYWORDS **********************
 terminal PROGRAM, CONST, VOID, BREAK, CLASS, IF, ELSE, NEW, RETURN, DO, WHILE, EXTENDS;
-terminal CONTINUE, PRINT, READ;
+terminal CONTINUE, PRINT, READ, THIS;
 
 // *****************  OPERATORS *********************
 terminal PLUS, MINUS, MUL, DIV, MOD, EQ, NEQ, GRT, GRTEQ, LSS, LEQ, AND, OR, ASSIGN, INC, DEC;
@@ -35,8 +35,7 @@ nonterminal Var_id_list var_id_list;
 nonterminal Var_id var_id;
 nonterminal Var_identifier var_identifier;
 nonterminal
-            Class_declaration class_declaration;
-nonterminal Class_identifier class_identifier;
+            Optional_extends optional_extends;
 nonterminal
             Method_decl_section method_decl_section;
 nonterminal Optional_method_decl_section optional_method_decl_section;
@@ -47,6 +46,7 @@ nonterminal
             Formal_parameter_section formal_parameter_section;
 nonterminal Formal_parameter_list formal_parameter_list;
 nonterminal Formal_parameter formal_parameter;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj class_declaration, class_identifier;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj const_id, method_identifier;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj constant, char_const, numeric_const, bool_const;
 
@@ -70,7 +70,7 @@ nonterminal Actual_parameter actual_parameter;
 nonterminal Actual_parameter_section actual_parameter_section;
 nonterminal Actual_parameter_list actual_parameter_list;
 nonterminal Method_call_ident method_call_ident;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj designator, array_ident;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj designator, array_ident, array_fld_ident, array_fld_header, array_fld_fix;
 nonterminal java.lang.String addition_operator, multiplication_operator;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct term, factor, expression, addition_term_list, multiplication_factor_list;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct condition, condition_term_list, condition_term, condition_factor_list, condition_factor;
@@ -121,8 +121,10 @@ declaration_section ::= (DeclarationSection) declaration_section:d1 declaration:
            var_identifier ::= (VarIdentifier) IDENT: id {: RESULT=new VarIdentifier(id); RESULT.setLine(idleft); :};
 
     // *** CLASS DECLARATION
-    class_declaration ::= (ClassDeclaration) CLASS class_identifier:c1 LBRACE var_declaration_list:v2 optional_method_decl_section:o3 RBRACE {: RESULT=new ClassDeclaration(c1, v2, o3); RESULT.setLine(c1left); :};
+    class_declaration ::= (ClassDeclaration) CLASS class_identifier:c1 optional_extends:o2 LBRACE var_declaration_list:v3 optional_method_decl_section:o4 RBRACE {: RESULT=new ClassDeclaration(c1, o2, v3, o4); RESULT.setLine(c1left); :};
       class_identifier ::= (ClassIdentifier) IDENT: id {: RESULT=new ClassIdentifier(id); RESULT.setLine(idleft); :};
+      optional_extends ::= (Extends) EXTENDS type:t1 {: RESULT=new Extends(t1); RESULT.setLine(t1left); :}
+                         | {: RESULT=new Optional_extendsDerived1(); :} /* epsilon */;
 
     // *** METHOD DECLARATION
     optional_method_decl_section ::= (OptionalMethodDeclSection) method_decl_section:m1 {: RESULT=new OptionalMethodDeclSection(m1); RESULT.setLine(m1left); :}
@@ -174,8 +176,14 @@ designator_statement ::= (Assignment) designator:d1 ASSIGN expression:e2 {: RESU
                        | (MethodCallDesignator) method_call_ident:m1 actual_parameter_section:a2 RPAREN {: RESULT=new MethodCallDesignator(m1, a2); RESULT.setLine(m1left); :};
     method_call_ident ::= (MethodCallIdent) designator:d1 LPAREN {: RESULT=new MethodCallIdent(d1); RESULT.setLine(d1left); :};
   designator ::= (DesignatorSingle) IDENT: id {: RESULT=new DesignatorSingle(id); RESULT.setLine(idleft); :}
-               | (DesignatorArray) array_ident:a1 expression:e2 RSQUARE {: RESULT=new DesignatorArray(a1, e2); RESULT.setLine(a1left); :};
+               | (DesignatorArray) array_ident:a1 expression:e2 RSQUARE {: RESULT=new DesignatorArray(a1, e2); RESULT.setLine(a1left); :}
+               | (DesignatorFieldSingle) designator:d1 DOT IDENT: id {: RESULT=new DesignatorFieldSingle(d1, id); RESULT.setLine(d1left); :}
+               | (DesignatorArrayFld) array_fld_header:a1 array_fld_fix:a2 {: RESULT=new DesignatorArrayFld(a1, a2); RESULT.setLine(a1left); :}
+               | (DesignatorThis) THIS DOT IDENT: id {: RESULT=new DesignatorThis(id); RESULT.setLine(idleft); :};
     array_ident ::= (ArrayIdent) IDENT: id LSQUARE {: RESULT=new ArrayIdent(id); RESULT.setLine(idleft); :};
+    array_fld_ident ::= (ArrayFldIdent) IDENT: id LSQUARE {: RESULT=new ArrayFldIdent(id); RESULT.setLine(idleft); :};
+      array_fld_header ::= (DesignatorFieldArray) designator:d1 DOT array_fld_ident:a2 {: RESULT=new DesignatorFieldArray(d1, a2); RESULT.setLine(d1left); :};
+      array_fld_fix ::= expression:e1 RSQUARE {: RESULT=new Array_fld_fixDerived1(e1); RESULT.setLine(e1left); :};
     actual_parameter_section ::= actual_parameter_list:a1 {: RESULT=new Actual_parameter_sectionDerived1(a1); RESULT.setLine(a1left); :}
                                | {: RESULT=new Actual_parameter_sectionDerived2(); :} /* epsilon */;
       actual_parameter_list ::= actual_parameter_list:a1 COMMA actual_parameter:a2 {: RESULT=new Actual_parameter_listDerived1(a1, a2); RESULT.setLine(a1left); :}

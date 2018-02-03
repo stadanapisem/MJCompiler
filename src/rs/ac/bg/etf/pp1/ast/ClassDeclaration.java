@@ -1,6 +1,6 @@
 // generated with ast extension for cup
 // version 0.8
-// 1/1/2018 17:58:9
+// 3/1/2018 21:45:32
 
 
 package rs.ac.bg.etf.pp1.ast;
@@ -8,12 +8,15 @@ package rs.ac.bg.etf.pp1.ast;
 public class ClassDeclaration extends Class_declaration {
 
     private Class_identifier class_identifier;
+    private Optional_extends optional_extends;
     private Var_declaration_list var_declaration_list;
     private Optional_method_decl_section optional_method_decl_section;
 
-    public ClassDeclaration (Class_identifier class_identifier, Var_declaration_list var_declaration_list, Optional_method_decl_section optional_method_decl_section) {
+    public ClassDeclaration (Class_identifier class_identifier, Optional_extends optional_extends, Var_declaration_list var_declaration_list, Optional_method_decl_section optional_method_decl_section) {
         this.class_identifier=class_identifier;
         if(class_identifier!=null) class_identifier.setParent(this);
+        this.optional_extends=optional_extends;
+        if(optional_extends!=null) optional_extends.setParent(this);
         this.var_declaration_list=var_declaration_list;
         if(var_declaration_list!=null) var_declaration_list.setParent(this);
         this.optional_method_decl_section=optional_method_decl_section;
@@ -26,6 +29,14 @@ public class ClassDeclaration extends Class_declaration {
 
     public void setClass_identifier(Class_identifier class_identifier) {
         this.class_identifier=class_identifier;
+    }
+
+    public Optional_extends getOptional_extends() {
+        return optional_extends;
+    }
+
+    public void setOptional_extends(Optional_extends optional_extends) {
+        this.optional_extends=optional_extends;
     }
 
     public Var_declaration_list getVar_declaration_list() {
@@ -50,6 +61,7 @@ public class ClassDeclaration extends Class_declaration {
 
     public void childrenAccept(Visitor visitor) {
         if(class_identifier!=null) class_identifier.accept(visitor);
+        if(optional_extends!=null) optional_extends.accept(visitor);
         if(var_declaration_list!=null) var_declaration_list.accept(visitor);
         if(optional_method_decl_section!=null) optional_method_decl_section.accept(visitor);
     }
@@ -57,12 +69,14 @@ public class ClassDeclaration extends Class_declaration {
     public void traverseTopDown(Visitor visitor) {
         accept(visitor);
         if(class_identifier!=null) class_identifier.traverseTopDown(visitor);
+        if(optional_extends!=null) optional_extends.traverseTopDown(visitor);
         if(var_declaration_list!=null) var_declaration_list.traverseTopDown(visitor);
         if(optional_method_decl_section!=null) optional_method_decl_section.traverseTopDown(visitor);
     }
 
     public void traverseBottomUp(Visitor visitor) {
         if(class_identifier!=null) class_identifier.traverseBottomUp(visitor);
+        if(optional_extends!=null) optional_extends.traverseBottomUp(visitor);
         if(var_declaration_list!=null) var_declaration_list.traverseBottomUp(visitor);
         if(optional_method_decl_section!=null) optional_method_decl_section.traverseBottomUp(visitor);
         accept(visitor);
@@ -75,6 +89,12 @@ public class ClassDeclaration extends Class_declaration {
 
         if(class_identifier!=null)
             buffer.append(class_identifier.toString("  "+tab));
+        else
+            buffer.append(tab+"  null");
+        buffer.append("\n");
+
+        if(optional_extends!=null)
+            buffer.append(optional_extends.toString("  "+tab));
         else
             buffer.append(tab+"  null");
         buffer.append("\n");
