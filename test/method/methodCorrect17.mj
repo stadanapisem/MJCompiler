@@ -1,0 +1,12 @@
+program saban {
+
+    void main() char c; int a; bool b[];{
+       c = chr(114);
+       print (c); print(eol);
+       a = ord(c);
+       print (a); print(eol);
+
+       b = new bool[133];
+       print(len(b));
+    }
+}

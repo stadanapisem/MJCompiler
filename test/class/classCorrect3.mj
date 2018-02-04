@@ -17,7 +17,7 @@ program saban
         int y;
       {
         void prnt() {
-            print (x); print(eol);
+            print (this.getX()); print(eol);
             print (y); print(eol);
         }
 
@@ -30,7 +30,10 @@ program saban
     void main()
         derived a[]; base b;
     {
-       //b = new derived;
+       b = new derived;
+       b.setX(3);
+       b.setY(13);
+       b.prnt();
        a = new derived[3];
        a[0] = new derived;
        a[0].setX(4);
@@ -38,5 +41,7 @@ program saban
         a[0].setY(6);
 
        a[0].prnt();
+       b = a[0];
+       b.prnt();
     }
 }

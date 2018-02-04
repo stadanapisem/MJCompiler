@@ -1,0 +1,59 @@
+program sapke
+  class base {
+     char c[];
+   {
+     void init() {
+         c = new char[5];
+         c[0] = 'H';
+         c[1] = 'E';
+         c[2] = 'L';
+         c[3] = 'L';
+         c[4] = 'O';
+     }
+
+     void printC() int i; {
+        i = 0;
+        do {
+           print (c[i]);
+           i ++;
+        } while (i < 5);
+
+        print(eol);
+     }
+   }
+  }
+
+  class derived extends base {
+     {
+       void init() {
+          c = new char[5];
+          c[0] = 'O';
+          c[1] = 'L';
+          c[2] = 'L';
+          c[3] = 'E';
+          c[4] = 'H';
+       }
+     }
+  }
+
+  class AAA extends derived {
+    {
+     void init() {
+         c = new char[5];
+         c[0] = 'R';
+         c[1] = 'A';
+         c[2] = 'D';
+         c[3] = 'I';
+         c[4] = '!';
+     }
+    }
+  }
+
+  base obj; int asdf;
+{
+   void main() {
+       obj = new AAA;
+       obj.init();
+       obj.printC();
+   }
+}

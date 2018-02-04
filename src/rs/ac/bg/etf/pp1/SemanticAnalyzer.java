@@ -30,12 +30,15 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     private int actualParameterIndex = 0;
     private int controlPaths = 0;
     private boolean insideClass = false;
+    private Tree Extention;
 
     public SemanticAnalyzer() {
         logger = Logger.getLogger(SemanticAnalyzer.class);
 
         Tab.init();
         boolType = Tab.insert(Obj.Type, "bool", new Struct(Struct.Char));
+        Extention = new Tree();
+        Extention.insert(new Struct(Struct.None));
     }
 
     private void report_info(String msg) {
@@ -140,8 +143,10 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     }
 
     @Override public void visit(MethodIdentifier MethodIdentifier) {
-        if (Tab.find(MethodIdentifier.getId()) != Tab.noObj) {
-            report_error("Line " + MethodIdentifier.getLine() + " Symbol already defined!");
+        if (Tab.currentScope().findSymbol(MethodIdentifier.getId()) != null) {
+            report_error(
+                "Line " + MethodIdentifier.getLine() + " Symbol " + MethodIdentifier.getId()
+                    + " already defined!");
         }
 
         MethodIdentifier.obj = Tab.insert(Obj.Meth, MethodIdentifier.getId(),
@@ -194,7 +199,8 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     }
 
     @Override public void visit(ReturnStatement ReturnStatement) {
-        if (!currentMethod.getType().compatibleWith(ReturnStatement.getExpression().struct)) {
+        if (!currentMethod.getType()
+            .compatibleWith(ReturnStatement.getExpression().obj.getType())) {
             report_error(
                 "Line " + ReturnStatement.getLine() + " Wrong operand type in return statement");
         }
@@ -212,77 +218,189 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     }
 
     @Override public void visit(ConstantFactor ConstantFactor) {
-        ConstantFactor.struct = ConstantFactor.getConstant().obj.getType();
+        ConstantFactor.obj = ConstantFactor.getConstant().obj;
         //report_debug("Line " + ConstantFactor.getLine() + " found constant factor");
     }
 
     @Override public void visit(ConstructorFactor ConstructorFactor) {
-        ConstructorFactor.struct = ConstructorFactor.getType().struct;
+        ConstructorFactor.obj = new Obj(Obj.NO_VALUE, ConstructorFactor.getType().getTypeName(),
+            ConstructorFactor.getType().struct);
         //report_debug("Line " + ConstructorFactor.getLine() + " found constructor factor");
     }
 
     @Override public void visit(ConstructorArrayFactor ConstructorArrayFactor) {
-        ConstructorArrayFactor.struct =
-            new Struct(Struct.Array, ConstructorArrayFactor.getType().struct);
+        ConstructorArrayFactor.obj =
+            new Obj(Obj.NO_VALUE, ConstructorArrayFactor.getType().getTypeName(),
+                new Struct(Struct.Array, ConstructorArrayFactor.getType().struct));
         //report_debug(
         //    "Line " + ConstructorArrayFactor.getLine() + " found array constructor factor");
     }
 
     @Override public void visit(ExpressionFactor ExpressionFactor) {
-        ExpressionFactor.struct = ExpressionFactor.getExpression().struct;
+        ExpressionFactor.obj = ExpressionFactor.getExpression().obj;
         //report_debug("Line " + ExpressionFactor.getLine() + " found expression factor");
     }
 
     @Override public void visit(DesignatorFactor designatorFactor) {
-        designatorFactor.struct = designatorFactor.getDesignator().obj.getType();
+        designatorFactor.obj = designatorFactor.getDesignator().obj;
     }
 
     @Override public void visit(AddExpression AddExpression) {
-        AddExpression.struct = (AddExpression.getAddition_term_list()).struct;
+        AddExpression.obj = (AddExpression.getAddition_term_list()).obj;
         //report_debug("Line " + AddExpression.getLine() + " found add expression");
     }
 
     @Override public void visit(Term Term) {
-        Term.struct = Term.getMultiplication_factor_list().struct;
+        Term.obj = Term.getMultiplication_factor_list().obj;
     }
 
     @Override public void visit(FactorList FactorList) {
-        if (FactorList.getFactor().struct != Tab.intType
-            || FactorList.getMultiplication_factor_list().struct != Tab.intType) {
+        if (FactorList.getFactor().obj.getType() != Tab.intType
+            || FactorList.getMultiplication_factor_list().obj.getType() != Tab.intType) {
             report_error("Line " + FactorList.getLine() + " Only integer arithmetic is supported");
         }
 
-        FactorList.struct = FactorList.getMultiplication_factor_list().struct;
+        FactorList.obj = FactorList.getMultiplication_factor_list().obj;
     }
 
     @Override public void visit(TerminalFactor TerminalFactor) {
-        TerminalFactor.struct = TerminalFactor.getFactor().struct;
+        TerminalFactor.obj = TerminalFactor.getFactor().obj;
     }
 
     @Override public void visit(TermList TermList) {
-        if (TermList.getTerm().struct != Tab.intType
-            || TermList.getAddition_term_list().struct != Tab.intType) {
+        if (TermList.getTerm().obj.getType() != Tab.intType
+            || TermList.getAddition_term_list().obj.getType() != Tab.intType) {
             report_error("Line " + TermList.getLine() + " Only integer arithmetic is supported");
         }
 
-        TermList.struct = TermList.getAddition_term_list().struct;
+        TermList.obj = TermList.getAddition_term_list().obj;
     }
 
     @Override public void visit(TerminalTerm TerminalTerm) {
-        TerminalTerm.struct = TerminalTerm.getTerm().struct;
+        TerminalTerm.obj = TerminalTerm.getTerm().obj;
     }
 
     @Override public void visit(NegTerminalTerm NegTerminalTerm) {
-        NegTerminalTerm.struct = NegTerminalTerm.getTerm().struct;
+        NegTerminalTerm.obj = NegTerminalTerm.getTerm().obj;
+    }
+
+    private boolean compatibleExtention(Obj left, Obj right) {
+        Struct derived = right.getType(), base = left.getType();
+
+        if (derived.getKind() == Struct.Array) {
+            derived = derived.getElemType();
+        }
+
+        if (base.getKind() == Struct.Array) {
+            base = base.getElemType();
+        }
+
+        return Extention.search(base, derived);
+    }
+
+    private boolean checkAssignmentConditions(Obj leftpar, Obj rightpar) {
+        Struct left = leftpar.getType(), right = rightpar.getType();
+
+        if (left.getKind() != Struct.Array && right.getKind() != Struct.Array) {
+            if (left.getKind() == Struct.Class && right.getKind() == Struct.Class) {
+                if (compatibleExtention(leftpar, rightpar)) {
+                    leftpar.setLocals(right.getMembers());
+                    return true;
+                }
+
+                return false;
+            } else if ((left.getKind() != Struct.Class && right.getKind() == Struct.Class) || (
+                left.getKind() == Struct.Class && right.getKind() != Struct.Class)) {
+                return false;
+            }
+
+            return right.assignableTo(left);
+        } else if (left.getKind() == Struct.Array && right.getKind() != Struct.Array) {
+            if (left.getElemType().getKind() == Struct.Class && right.getKind() != Struct.Class) {
+                return false;
+            } else if (left.getElemType().getKind() != Struct.Class
+                && right.getKind() == Struct.Class) {
+                return false;
+            } else if (left.getElemType().getKind() == Struct.Class
+                && right.getKind() == Struct.Class) {
+                if (compatibleExtention(leftpar, rightpar)) {
+                    //left = new Struct(Struct.Array, new Struct(Struct.Class));
+                    //left.getElemType().setMembers(right.getMembers());
+                    leftpar.setLocals(right.getMembers());
+                    return true;
+                }
+
+                return false;
+            }
+
+            return right.assignableTo(left.getElemType());
+        } else if (left.getKind() == Struct.Array && right.getKind() == Struct.Array) {
+            if (left.getElemType().getKind() == Struct.Class
+                && right.getElemType().getKind() == Struct.Class) {
+
+                if (compatibleExtention(leftpar, rightpar)) {
+                    //left = new Struct(Struct.Array, new Struct(Struct.Class));
+                    //left.getElemType().setMembers(right.getElemType().getMembers());
+                    leftpar.setLocals(right.getElemType().getMembers());
+                    return true;
+                }
+
+                return false;
+            } else if ((left.getElemType().getKind() != Struct.Class
+                && right.getElemType().getKind() == Struct.Class) || (
+                left.getElemType().getKind() == Struct.Class
+                    && right.getElemType().getKind() != Struct.Class)) {
+                return false;
+            }
+
+            return right.getElemType().assignableTo(left.getElemType());
+        } else if (left.getKind() != Struct.Array && right.getKind() == Struct.Array) {
+            if (right.getElemType().getKind() == Struct.Class && left.getKind() != Struct.Class) {
+                return false;
+            } else if (right.getElemType().getKind() != Struct.Class
+                && left.getKind() == Struct.Class) {
+                return false;
+            } else if (right.getElemType().getKind() == Struct.Class
+                && left.getKind() == Struct.Class) {
+                if (compatibleExtention(leftpar, rightpar)) {
+                    //left = new Struct(Struct.Class);
+                    //left.setMembers(right.getElemType().getMembers());
+                    leftpar.setLocals(right.getElemType().getMembers());
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
+        return false;
     }
 
     @Override public void visit(Assignment assignment) {
         Obj tmp = assignment.getDesignator().obj;
 
         if (tmp.getKind() == Obj.Var || tmp.getKind() == Obj.Elem || tmp.getKind() == Obj.Fld) {
-            if (!assignment.getExpression().struct.assignableTo(tmp.getType())) {
+            /*if (!assignment.getExpression().obj.getType().assignableTo(tmp.getType()) || (
+                tmp.getType().getKind() == Struct.Array && !assignment.getExpression().obj.getType()
+                    .assignableTo(tmp.getType().getElemType())) || (
+                assignment.getExpression().obj.getType().getKind() == Struct.Array && !assignment
+                    .getExpression().obj.getType().getElemType().assignableTo(tmp.getType()))) {*/
+           /* if (!assignment.getExpression().obj.getType().assignableTo(tmp.getType()) || (
+                (assignment.getExpression().obj.getType().getKind() == Struct.Class
+                    && tmp.getType().getKind() == Struct.Class && !compatibleExtention(
+                    assignment.getDesignator().obj, assignment.getExpression().obj)) && (
+                    tmp.getType().getElemType().getKind() == Struct.Class
+                        && assignment.getExpression().obj.getType().getKind() == Struct.Class
+                        && !compatibleExtention(tmp, assignment.getExpression().obj)))) {*/
+            if (!checkAssignmentConditions(tmp, assignment.getExpression().obj)) {
+                /*if (!compatibleExtention(assignment.getDesignator().obj,
+                    assignment.getExpression().obj)) {*/
                 report_error("Line " + assignment.getLine() + " assignment types not compatible");
-            }
+            }/* else {
+                assignment.getDesignator().obj.getType()
+                    .setMembers(assignment.getExpression().obj.getType().getMembers());
+            }*/
+            // }
         } else {
             report_error("Line " + assignment.getLine()
                 + " assignment left side must be variable or array element");
@@ -318,14 +436,14 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         Obj tmp = Tab.find(DesignatorSingle.getId());
         if (tmp == Tab.noObj) {
 
-            /*if (insideClass) { // maybe we need inherited fld/meth
+            if (insideClass) { // maybe we need inherited fld/meth
                 String superName = "super." + DesignatorSingle.getId();
 
                 for (int i = 1; tmp == Tab.noObj && i < MAX_INHERITANCE_LEVEL; i++) {
                     tmp = Tab.find(superName);
                     superName = "super." + superName;
                 }
-            }*/
+            }
 
             if (tmp == Tab.noObj) {
                 report_error(
@@ -338,7 +456,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     }
 
     @Override public void visit(DesignatorArray designatorArray) {
-        if (!designatorArray.getExpression().struct.compatibleWith(Tab.intType)) {
+        if (!designatorArray.getExpression().obj.getType().compatibleWith(Tab.intType)) {
             report_error("Line " + designatorArray.getLine() + " array index must be an integer");
         }
 
@@ -346,7 +464,14 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     }
 
     private Obj findLocalSymbol(Obj var, String symbol) {
-        Collection<Obj> objs = var.getType().getMembers().symbols();
+        Collection<Obj> objs;
+
+        if (var.getKind() == Obj.Elem) {
+            objs = var.getType().getMembers().symbols();
+        } else {
+            objs = var.getLocalSymbols();
+        }
+
         for (Obj tmp : objs) {
             if (tmp.getName().equals(symbol))
                 return tmp;
@@ -360,14 +485,15 @@ public class SemanticAnalyzer extends VisitorAdaptor {
             designatorFieldSingle.getId());
 
         if (tmp == Tab.noObj) {
-            /*if (designatorFieldSingle.getDesignator().obj.getType().getKind() == Struct.Class) { // maybe we need inherited fld/meth
+            if (designatorFieldSingle.getDesignator().obj.getType().getKind()
+                == Struct.Class) { // maybe we need inherited fld/meth
                 String superName = "super." + designatorFieldSingle.getId();
 
                 for (int i = 1; tmp == Tab.noObj && i < MAX_INHERITANCE_LEVEL; i++) {
                     tmp = findLocalSymbol(designatorFieldSingle.getDesignator().obj, superName);
                     superName = "super." + superName;
                 }
-            }*/
+            }
 
             if (tmp == Tab.noObj) {
                 report_error(
@@ -400,7 +526,18 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         String ident = arrayIdent.getId();
         Obj tmp = Tab.find(ident);
         if (tmp == Tab.noObj) {
-            report_error("Line " + arrayIdent.getLine() + " name " + ident + " not declared");
+            for (int i = 0; i < MAX_INHERITANCE_LEVEL; i++) {
+                ident = "super." + ident;
+                tmp = Tab.find(ident);
+
+                if (tmp != Tab.noObj) {
+                    break;
+                }
+            }
+
+            if (tmp == Tab.noObj) {
+                report_error("Line " + arrayIdent.getLine() + " name " + ident + " not declared");
+            }
         }
 
         arrayIdent.obj = new Obj(Obj.Elem, tmp.getName(), tmp.getType().getElemType());
@@ -426,7 +563,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     }
 
     @Override public void visit(MethodCall methodCall) {
-        methodCall.struct = currentMethodCall.getType();
+        methodCall.obj = new Obj(Obj.NO_VALUE, "", currentMethodCall.getType());
     }
 
     @Override public void visit(MethodCallDesignator methodCallDesignator) {
@@ -441,26 +578,29 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         }
 
         if (!params[actualParameterIndex].getType()
-            .compatibleWith(actualParameter.getExpression().struct)) {
-            report_error(
-                "Line " + actualParameter.getLine() + " Parameter " + (actualParameterIndex + 1)
-                    + " wrong type");
+            .compatibleWith(actualParameter.getExpression().obj.getType())) {
+            if ((params[actualParameterIndex].getType().getKind() == Struct.Array
+                && params[actualParameterIndex].getType().getElemType().getKind() != Struct.None)) {
+                report_error(
+                    "Line " + actualParameter.getLine() + " Parameter " + (actualParameterIndex + 1)
+                        + " wrong type");
+            }
         }
 
         actualParameterIndex++;
     }
 
     @Override public void visit(TermCondFactor termCondFactor) {
-        if (termCondFactor.getExpression().struct != boolType.getType()) {
+        if (termCondFactor.getExpression().obj.getType() != boolType.getType()) {
             report_error("Line " + termCondFactor.getLine() + " operand not boolean type");
         }
 
-        termCondFactor.struct = termCondFactor.getExpression().struct;
+        termCondFactor.struct = termCondFactor.getExpression().obj.getType();
     }
 
     @Override public void visit(CondOpFactor condOpFactor) {
-        if (!condOpFactor.getExpression().struct
-            .compatibleWith(condOpFactor.getExpression1().struct)) {
+        if (!condOpFactor.getExpression().obj.getType()
+            .compatibleWith(condOpFactor.getExpression1().obj.getType())) {
             report_error("Line " + condOpFactor.getLine() + " wrong operand types");
         }
 
@@ -516,6 +656,13 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         Tab.chainLocalSymbols(classDeclaration.obj);
         Tab.closeScope();
         insideClass = false;
+
+        if (classDeclaration.getOptional_extends() instanceof Extends) {
+            Extention.insert(((Extends) classDeclaration.getOptional_extends()).getType().struct,
+                classDeclaration.getClass_identifier().obj.getType());
+        } else {
+            Extention.insert(classDeclaration.obj.getType());
+        }
     }
 
     @Override public void visit(ClassIdentifier classIdentifier) {
@@ -538,12 +685,13 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 
         parentObj.getType().getMembers().symbols().forEach(tmp -> {
             if (!tmp.getName().equals("_vtable")) {
-                Obj inherited = Tab.insert(tmp.getKind(), tmp.getName(), tmp.getType());
+                Obj inherited = Tab.insert(tmp.getKind(), "super." + tmp.getName(), tmp.getType());
                 inherited.setAdr(tmp.getAdr());
 
                 if (tmp.getKind() == Obj.Meth) {
                     Tab.openScope();
-                    tmp.getLocalSymbols().forEach(member -> Tab.insert(member.getKind(), member.getName(), member.getType()));
+                    tmp.getLocalSymbols().forEach(
+                        member -> Tab.insert(member.getKind(), member.getName(), member.getType()));
                     Tab.chainLocalSymbols(inherited);
                     Tab.closeScope();
                 }

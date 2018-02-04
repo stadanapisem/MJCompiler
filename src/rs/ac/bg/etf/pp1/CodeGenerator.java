@@ -9,7 +9,10 @@ import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.concepts.Struct;
 
+import java.util.Collection;
 import java.util.Stack;
+
+import static rs.ac.bg.etf.pp1.SemanticAnalyzer.MAX_INHERITANCE_LEVEL;
 
 public class CodeGenerator extends VisitorAdaptor {
 
@@ -38,6 +41,7 @@ public class CodeGenerator extends VisitorAdaptor {
     private int level = 0;
 
     private Stack<Integer> fixUpAnd, fixUpOr, fixUpAdr, breakPc, continuePc, breaksNumber;
+    private Tree Extention;
 
     public CodeGenerator() {
         logger = Logger.getLogger(SemanticAnalyzer.class);
@@ -48,6 +52,8 @@ public class CodeGenerator extends VisitorAdaptor {
         continuePc = new Stack<>();
         breaksNumber = new Stack<>();
         buff = new byte[8192];
+        Extention = new Tree();
+        Extention.insert(new Struct(Struct.None));
 
         Tab.init();
         Tab.insert(SemanticAnalyzer.boolType.getKind(), "bool",
@@ -126,6 +132,7 @@ public class CodeGenerator extends VisitorAdaptor {
         Tab.closeScope();
         level--;
         returnFound = false;
+        currentMethod = null;
     }
 
     @Override public void visit(ReturnStatement returnStatement) {
@@ -140,18 +147,40 @@ public class CodeGenerator extends VisitorAdaptor {
         returnFound = true;
     }
 
+    private void integrateFunctions() {
+        Obj chrObj = Tab.find("chr");
+        chrObj.setAdr(Code.pc);
+        Obj ordObj = Tab.find("ord");
+        ordObj.setAdr(Code.pc);
+
+        Code.put(Code.enter);
+        Code.put(1);
+        Code.put(1);
+        Code.put(Code.load);
+        Code.put(0);
+        Code.put(Code.exit);
+        Code.put(Code.return_);
+
+        Obj lenObj = Tab.find("len");
+        lenObj.setAdr(Code.pc);
+
+        Code.put(Code.enter);
+        Code.put(1);
+        Code.put(1);
+        Code.put(Code.load);
+        Code.put(0);
+        Code.put(Code.arraylength);
+        Code.put(Code.exit);
+        Code.put(Code.return_);
+    }
+
     @Override public void visit(ProgramName programName) {
         programName.obj = Tab.insert(Obj.Prog, programName.getId(), Tab.noType);
         Tab.openScope();
         this.programName = programName.getId();
-        varCount = 0;
-        programName.obj.getLocalSymbols().forEach(tmp -> {
-            if (tmp.getKind() == Obj.Var) {
-                varCount++;
-            }
-        });
-        Code.dataSize = varCount;
-        additionalData = Code.dataSize;
+        additionalData = 0;
+
+        integrateFunctions();
     }
 
     @Override public void visit(Program program) {
@@ -173,6 +202,12 @@ public class CodeGenerator extends VisitorAdaptor {
         Code.put(Code.exit);
 
         Code.dataSize = additionalData;
+        Tab.chainLocalSymbols(program.getProgram_name().obj);
+        /*program.getProgram_name().obj.getLocalSymbols().forEach(tmp -> {
+            if (tmp.getKind() == Obj.Var) {
+                tmp.setAdr(Code.dataSize++);
+            }
+        });*/
         Tab.closeScope();
     }
 
@@ -195,6 +230,13 @@ public class CodeGenerator extends VisitorAdaptor {
         loadConst(-2);
         put(Code.putstatic);
         put2(additionalData++);
+
+        if (classDeclaration.getOptional_extends() instanceof Extends) {
+            Extention.insert(((Extends) classDeclaration.getOptional_extends()).getType().struct,
+                classDeclaration.getClass_identifier().obj.getType());
+        } else {
+            Extention.insert(classDeclaration.obj.getType());
+        }
     }
 
     @Override public void visit(Extends extnd) {
@@ -202,7 +244,7 @@ public class CodeGenerator extends VisitorAdaptor {
 
         base.getType().getMembers().symbols().forEach(tmp -> {
             if (!tmp.getName().equals("_vtable")) {
-                Obj inherited = Tab.insert(tmp.getKind(), tmp.getName(), tmp.getType());
+                Obj inherited = Tab.insert(tmp.getKind(), "super." + tmp.getName(), tmp.getType());
                 inherited.setAdr(tmp.getAdr());
 
                 if (tmp.getKind() == Obj.Meth) {
@@ -212,8 +254,9 @@ public class CodeGenerator extends VisitorAdaptor {
                     Tab.chainLocalSymbols(inherited);
                     Tab.closeScope();
 
-                    for (int i = 0; i < tmp.getName().length(); i++) {
-                        loadConst(tmp.getName().charAt(i));
+                    String ident = "super." + tmp.getName();
+                    for (int i = 0; i < ident.length(); i++) {
+                        loadConst(ident.charAt(i));
                         put(Code.putstatic);
                         put2(additionalData++);
                     }
@@ -272,31 +315,31 @@ public class CodeGenerator extends VisitorAdaptor {
     }
 
     @Override public void visit(PrintStatement printStatement) {
-        if (printStatement.getExpression().struct.getKind() == Struct.None) {
+        if (printStatement.getExpression().obj.getType().getKind() == Struct.None) {
             report_error("Line " + printStatement.getLine() + " unknown type");
         }
 
         Code.loadConst(0);
-        if (printStatement.getExpression().struct == Tab.intType
-            || printStatement.getExpression().struct == SemanticAnalyzer.boolType.getType()
-            || printStatement.getExpression().struct.getElemType() == Tab.intType) {
+        if (printStatement.getExpression().obj.getType() == Tab.intType
+            || printStatement.getExpression().obj.getType() == SemanticAnalyzer.boolType.getType()
+            || printStatement.getExpression().obj.getType().getElemType() == Tab.intType) {
             Code.put(Code.print);
-        } else if (printStatement.getExpression().struct == Tab.charType
-            || printStatement.getExpression().struct.getElemType() == Tab.charType) {
+        } else if (printStatement.getExpression().obj.getType() == Tab.charType
+            || printStatement.getExpression().obj.getType().getElemType() == Tab.charType) {
             Code.put(Code.bprint);
         }
     }
 
     @Override public void visit(ComplexPrintStatement complexPrintStatement) {
-        if (complexPrintStatement.getExpression().struct.getKind() == Struct.None) {
+        if (complexPrintStatement.getExpression().obj.getType().getKind() == Struct.None) {
             report_error("Line " + complexPrintStatement.getLine() + " unknown type");
         }
 
         Code.loadConst(complexPrintStatement.getNumeric_const().obj.getAdr());
 
-        if (complexPrintStatement.getExpression().struct == Tab.intType) {
+        if (complexPrintStatement.getExpression().obj.getType() == Tab.intType) {
             Code.put(Code.print);
-        } else if (complexPrintStatement.getExpression().struct == Tab.charType) {
+        } else if (complexPrintStatement.getExpression().obj.getType() == Tab.charType) {
             Code.put(Code.bprint);
         }
     }
@@ -324,13 +367,109 @@ public class CodeGenerator extends VisitorAdaptor {
         }
     }
 
+    private boolean compatibleExtention(Obj left, Obj right) {
+        Struct derived = right.getType(), base = left.getType();
+
+        if (derived.getKind() == Struct.Array) {
+            derived = derived.getElemType();
+        }
+
+        if (base.getKind() == Struct.Array) {
+            base = base.getElemType();
+        }
+
+        return Extention.search(base, derived);
+    }
+
+    private boolean checkAssignmentConditions(Obj leftpar, Obj rightpar) {
+        Struct left = leftpar.getType(), right = rightpar.getType();
+
+        if (left.getKind() != Struct.Array && right.getKind() != Struct.Array) {
+            if (left.getKind() == Struct.Class && right.getKind() == Struct.Class) {
+                if (compatibleExtention(leftpar, rightpar)) {
+                    leftpar.setLocals(right.getMembers());
+                    return true;
+                }
+
+                return false;
+            } else if ((left.getKind() != Struct.Class && right.getKind() == Struct.Class) || (
+                left.getKind() == Struct.Class && right.getKind() != Struct.Class)) {
+                return false;
+            }
+
+            return right.assignableTo(left);
+        } else if (left.getKind() == Struct.Array && right.getKind() != Struct.Array) {
+            if (left.getElemType().getKind() == Struct.Class && right.getKind() != Struct.Class) {
+                return false;
+            } else if (left.getElemType().getKind() != Struct.Class
+                && right.getKind() == Struct.Class) {
+                return false;
+            } else if (left.getElemType().getKind() == Struct.Class
+                && right.getKind() == Struct.Class) {
+                if (compatibleExtention(leftpar, rightpar)) {
+                    //left = new Struct(Struct.Array, new Struct(Struct.Class));
+                    //left.getElemType().setMembers(right.getMembers());
+                    leftpar.setLocals(right.getMembers());
+                    return true;
+                }
+
+                return false;
+            }
+
+            return right.assignableTo(left.getElemType());
+        } else if (left.getKind() == Struct.Array && right.getKind() == Struct.Array) {
+            if (left.getElemType().getKind() == Struct.Class
+                && right.getElemType().getKind() == Struct.Class) {
+
+                if (compatibleExtention(leftpar, rightpar)) {
+                    //left = new Struct(Struct.Array, new Struct(Struct.Class));
+                    //left.getElemType().setMembers(right.getElemType().getMembers());
+                    leftpar.setLocals(right.getElemType().getMembers());
+                    return true;
+                }
+
+                return false;
+            } else if ((left.getElemType().getKind() != Struct.Class
+                && right.getElemType().getKind() == Struct.Class) || (
+                left.getElemType().getKind() == Struct.Class
+                    && right.getElemType().getKind() != Struct.Class)) {
+                return false;
+            }
+
+            return right.getElemType().assignableTo(left.getElemType());
+        } else if (left.getKind() != Struct.Array && right.getKind() == Struct.Array) {
+            if (right.getElemType().getKind() == Struct.Class && left.getKind() != Struct.Class) {
+                return false;
+            } else if (right.getElemType().getKind() != Struct.Class
+                && left.getKind() == Struct.Class) {
+                return false;
+            } else if (right.getElemType().getKind() == Struct.Class
+                && left.getKind() == Struct.Class) {
+                if (compatibleExtention(leftpar, rightpar)) {
+                    //left = new Struct(Struct.Class);
+                    //left.setMembers(right.getElemType().getMembers());
+                    leftpar.setLocals(right.getElemType().getMembers());
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
+        return false;
+    }
+
     @Override public void visit(Assignment assignment) {
+        checkAssignmentConditions(assignment.getDesignator().obj, assignment.getExpression().obj);
+
         Code.store(assignment.getDesignator().obj);
 
         if (newTypeObj != null) {
             if (assignment.getDesignator().obj.getKind() == Obj.Elem) {
                 Code.load(Tab.find(assignment.getDesignator().obj.getName()));
-                Code.load(budzevina);
+                CounterVisitor.FindArrayIndex idx = new CounterVisitor.FindArrayIndex();
+                assignment.getParent().traverseTopDown(idx);
+                Code.loadConst(idx.counter);
                 report_info("Yes it is");
             }
 
@@ -377,7 +516,7 @@ public class CodeGenerator extends VisitorAdaptor {
     }
 
     @Override public void visit(ConstantFactor constantFactor) {
-        constantFactor.struct = constantFactor.getConstant().obj.getType();
+        constantFactor.obj = new Obj(Obj.NO_VALUE, "", constantFactor.getConstant().obj.getType());
         if (constantFactor.getConstant().obj.getType() == Tab.intType) {
             budzevina = constantFactor.getConstant().obj;
             Code.load(constantFactor.getConstant().obj);
@@ -387,7 +526,7 @@ public class CodeGenerator extends VisitorAdaptor {
     }
 
     @Override public void visit(ConstructorFactor ConstructorFactor) {
-        ConstructorFactor.struct = ConstructorFactor.getType().struct;
+        ConstructorFactor.obj = new Obj(Obj.NO_VALUE, "", ConstructorFactor.getType().struct);
         //report_debug("Line " + ConstructorFactor.getLine() + " found constructor factor");
         Code.put(Code.new_);
         Code.put2(currentType.getNumberOfFields() * 4);
@@ -395,16 +534,16 @@ public class CodeGenerator extends VisitorAdaptor {
     }
 
     @Override public void visit(ConstructorArrayFactor ConstructorArrayFactor) {
-        ConstructorArrayFactor.struct =
-            new Struct(Struct.Array, ConstructorArrayFactor.getType().struct);
+        ConstructorArrayFactor.obj = new Obj(Obj.NO_VALUE, "",
+            new Struct(Struct.Array, ConstructorArrayFactor.getType().struct));
         //report_debug(
         //    "Line " + ConstructorArrayFactor.getLine() + " found array constructor factor");
         Code.put(Code.newarray);
-        Code.put(ConstructorArrayFactor.struct == Tab.charType ? 0 : 1);
+        Code.put(ConstructorArrayFactor.obj.getType() == Tab.charType ? 0 : 1);
     }
 
     @Override public void visit(ExpressionFactor ExpressionFactor) {
-        ExpressionFactor.struct = ExpressionFactor.getExpression().struct;
+        ExpressionFactor.obj = ExpressionFactor.getExpression().obj;
         //report_debug("Line " + ExpressionFactor.getLine() + " found expression factor");
     }
 
@@ -415,7 +554,7 @@ public class CodeGenerator extends VisitorAdaptor {
     }
 
     @Override public void visit(AddExpression AddExpression) {
-        AddExpression.struct = (AddExpression.getAddition_term_list()).struct;
+        AddExpression.obj = (AddExpression.getAddition_term_list()).obj;
         //report_debug("Line " + AddExpression.getLine() + " found add expression");
     }
 
@@ -545,30 +684,30 @@ public class CodeGenerator extends VisitorAdaptor {
     }
 
     @Override public void visit(Term Term) {
-        Term.struct = Term.getMultiplication_factor_list().struct;
+        Term.obj = Term.getMultiplication_factor_list().obj;
     }
 
     @Override public void visit(FactorList FactorList) {
         Code.put(Integer.parseInt(FactorList.getMultiplication_operator().string));
-        FactorList.struct = FactorList.getMultiplication_factor_list().struct;
+        FactorList.obj = FactorList.getMultiplication_factor_list().obj;
     }
 
     @Override public void visit(TerminalFactor TerminalFactor) {
-        TerminalFactor.struct = TerminalFactor.getFactor().struct;
+        TerminalFactor.obj = TerminalFactor.getFactor().obj;
     }
 
     @Override public void visit(TermList TermList) {
         Code.put(Integer.parseInt(TermList.getAddition_operator().string));
-        TermList.struct = TermList.getAddition_term_list().struct;
+        TermList.obj = TermList.getAddition_term_list().obj;
     }
 
     @Override public void visit(TerminalTerm TerminalTerm) {
-        TerminalTerm.struct = TerminalTerm.getTerm().struct;
+        TerminalTerm.obj = TerminalTerm.getTerm().obj;
     }
 
     @Override public void visit(NegTerminalTerm NegTerminalTerm) {
         Code.put(Code.neg);
-        NegTerminalTerm.struct = NegTerminalTerm.getTerm().struct;
+        NegTerminalTerm.obj = NegTerminalTerm.getTerm().obj;
     }
 
     @Override public void visit(MethodCall methodCall) {
@@ -599,6 +738,23 @@ public class CodeGenerator extends VisitorAdaptor {
         }
     }
 
+    private Obj findLocalSymbol(Obj var, String symbol) {
+        Collection<Obj> objs;
+
+        if (var.getKind() == Obj.Elem) {
+            objs = var.getType().getMembers().symbols();
+        } else {
+            objs = var.getLocalSymbols();
+        }
+
+        for (Obj tmp : objs) {
+            if (tmp.getName().equals(symbol))
+                return tmp;
+        }
+
+        return Tab.noObj;
+    }
+
     @Override public void visit(MethodCallDesignator methodCallDesignator) {
         if (!virtualCall) {
             int offset =
@@ -611,7 +767,10 @@ public class CodeGenerator extends VisitorAdaptor {
         } else {
             Code.load(this_var);
             if (this_var.getType().getKind() == Struct.Array) {
-                Code.load(budzevina);
+                CounterVisitor.FindArrayIndex idx = new CounterVisitor.FindArrayIndex();
+                methodCallDesignator.getParent().traverseTopDown(idx);
+
+                Code.loadConst(idx.getCounter());
                 Code.put(Code.aload);
             }
 
@@ -623,8 +782,17 @@ public class CodeGenerator extends VisitorAdaptor {
             String methodName =
                 ((MethodCallIdent) methodCallDesignator.getMethod_call_ident()).getDesignator().obj
                     .getName();
-            //methodName = methodName.replace("super.", "");
-            for (int i = 0; i < methodName.length(); i++) {
+            Obj tmp = Tab.noObj;
+            int i = 0;
+            do {
+                tmp = findLocalSymbol(this_var, methodName);
+                if (tmp != Tab.noObj) {
+                    break;
+                }
+                methodName = "super." + methodName;
+            } while (tmp == Tab.noObj && i++ < MAX_INHERITANCE_LEVEL);
+
+            for (i = 0; i < methodName.length(); i++) {
                 Code.put4(methodName.charAt(i));
             }
 
@@ -640,16 +808,15 @@ public class CodeGenerator extends VisitorAdaptor {
             tmp = Tab.find(DesignatorSingle.getId());
 
             if (tmp == Tab.noObj) {
-                /*if (insideClass) {
+                if (insideClass) {
                     String superName = "super." + DesignatorSingle.getId();
 
-                    for (int i = 1;
-                         tmp == Tab.noObj && i < SemanticAnalyzer.MAX_INHERITANCE_LEVEL; i++) {
+                    for (int i = 1; tmp == Tab.noObj && i < MAX_INHERITANCE_LEVEL; i++) {
                         tmp = Tab.find(superName);
                         superName = "super." + superName;
                     }
 
-                }*/
+                }
 
                 if (tmp == Tab.noObj) {
                     report_error(
@@ -675,8 +842,14 @@ public class CodeGenerator extends VisitorAdaptor {
         String ident = arrayIdent.getId();
         Obj tmp = Tab.find(ident);
         if (tmp == Tab.noObj) {
-            return;
-            //report_error("Line " + arrayIdent.getLine() + " name " + ident + " not declared");
+            for (int i = 0; i < MAX_INHERITANCE_LEVEL; i++) {
+                ident = "super." + ident;
+                tmp = Tab.find(ident);
+
+                if (tmp != Tab.noObj) {
+                    break;
+                }
+            }
         }
 
         arrayIdent.obj = new Obj(Obj.Elem, tmp.getName(), tmp.getType().getElemType());
@@ -731,6 +904,10 @@ public class CodeGenerator extends VisitorAdaptor {
             ((VarIdentifier) varIDArray.getVar_identifier()).getId(),
             new Struct(Struct.Array, currentType));
         tmp.setLevel(level);
+
+        if (currentMethodThis == null && !insideClass) {// global var
+            tmp.setAdr(additionalData++);
+        }
     }
 
     @Override public void visit(VarID varID) {
@@ -738,6 +915,9 @@ public class CodeGenerator extends VisitorAdaptor {
             ((VarIdentifier) varID.getVar_identifier()).getId(), currentType);
         tmp.setLevel(level);
 
+        if (currentMethod == null && !insideClass) {// global var
+            tmp.setAdr(additionalData++);
+        }
     }
 
     @Override public void visit(ConstIdentifier constIdentifier) {
@@ -752,20 +932,6 @@ public class CodeGenerator extends VisitorAdaptor {
     @Override public void visit(FormalParameterArray FormalParameterArray) {
         Tab.currentScope().addToLocals(new Obj(Obj.Var, FormalParameterArray.getI2(),
             new Struct(Struct.Array, FormalParameterArray.getType().struct), 0, level));
-    }
-
-    private Obj completeSeach(Obj obj, String ident) {
-        for (Obj tmp : obj.getLocalSymbols()) {
-            if (ident.equals(tmp.getName())) {
-                return tmp;
-            }
-
-            Obj rectmp = completeSeach(tmp, ident);
-            if (rectmp != Tab.noObj)
-                return rectmp;
-        }
-
-        return Tab.noObj;
     }
 
     private void put(int x) {

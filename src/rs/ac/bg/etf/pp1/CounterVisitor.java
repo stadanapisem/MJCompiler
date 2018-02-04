@@ -1,9 +1,6 @@
 package rs.ac.bg.etf.pp1;
 
-import rs.ac.bg.etf.pp1.ast.FormalParameter;
-import rs.ac.bg.etf.pp1.ast.FormalParameterArray;
-import rs.ac.bg.etf.pp1.ast.VarIdentifier;
-import rs.ac.bg.etf.pp1.ast.VisitorAdaptor;
+import rs.ac.bg.etf.pp1.ast.*;
 
 public class CounterVisitor extends VisitorAdaptor {
 
@@ -26,6 +23,17 @@ public class CounterVisitor extends VisitorAdaptor {
 
         @Override public void visit(FormalParameterArray formalParameterArray) {
             counter ++;
+        }
+    }
+
+    public static class FindArrayIndex extends CounterVisitor {
+        private boolean first = false;
+
+        @Override public void visit(NumericConst numericConst) {
+            if (!first) {
+                counter = numericConst.getVar();
+                first = true;
+            }
         }
     }
 }

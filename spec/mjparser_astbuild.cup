@@ -72,7 +72,7 @@ nonterminal Actual_parameter_list actual_parameter_list;
 nonterminal Method_call_ident method_call_ident;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj designator, array_ident, array_fld_ident, array_fld_header, array_fld_fix;
 nonterminal java.lang.String addition_operator, multiplication_operator;
-nonterminal rs.etf.pp1.symboltable.concepts.Struct term, factor, expression, addition_term_list, multiplication_factor_list;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj term, factor, expression, addition_term_list, multiplication_factor_list;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct condition, condition_term_list, condition_term, condition_factor_list, condition_factor;
 nonterminal java.lang.String rel_operator, or_operator, and_operator;
 precedence left ELSE;

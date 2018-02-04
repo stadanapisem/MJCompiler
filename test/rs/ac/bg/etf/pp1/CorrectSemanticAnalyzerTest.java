@@ -35,6 +35,11 @@ import java.util.stream.Collectors;
                 .filter(tmp -> tmp.toString().contains("Correct")).map(tmp -> tmp.toString())
                 .collect(Collectors.toList()));
 
+        constants.addAll(
+            Files.walk(Paths.get("test", "class")).filter(tmp -> tmp.toString().endsWith(".mj"))
+                .filter(tmp -> tmp.toString().contains("Correct")).map(tmp -> tmp.toString())
+                .collect(Collectors.toList()));
+
         return constants.toArray();
     }
 
