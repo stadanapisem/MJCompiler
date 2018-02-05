@@ -1,6 +1,6 @@
 // generated with ast extension for cup
 // version 0.8
-// 3/1/2018 21:47:4
+// 5/1/2018 22:2:38
 
 
 package rs.ac.bg.etf.pp1.ast;
@@ -9,13 +9,16 @@ public class MethodDeclaration extends Method_decl {
 
     private Method_identifier method_identifier;
     private Formal_parameter_section formal_parameter_section;
+    private Formal_param_num_fix formal_param_num_fix;
     private Var_declaration_list var_declaration_list;
 
-    public MethodDeclaration (Method_identifier method_identifier, Formal_parameter_section formal_parameter_section, Var_declaration_list var_declaration_list) {
+    public MethodDeclaration (Method_identifier method_identifier, Formal_parameter_section formal_parameter_section, Formal_param_num_fix formal_param_num_fix, Var_declaration_list var_declaration_list) {
         this.method_identifier=method_identifier;
         if(method_identifier!=null) method_identifier.setParent(this);
         this.formal_parameter_section=formal_parameter_section;
         if(formal_parameter_section!=null) formal_parameter_section.setParent(this);
+        this.formal_param_num_fix=formal_param_num_fix;
+        if(formal_param_num_fix!=null) formal_param_num_fix.setParent(this);
         this.var_declaration_list=var_declaration_list;
         if(var_declaration_list!=null) var_declaration_list.setParent(this);
     }
@@ -36,6 +39,14 @@ public class MethodDeclaration extends Method_decl {
         this.formal_parameter_section=formal_parameter_section;
     }
 
+    public Formal_param_num_fix getFormal_param_num_fix() {
+        return formal_param_num_fix;
+    }
+
+    public void setFormal_param_num_fix(Formal_param_num_fix formal_param_num_fix) {
+        this.formal_param_num_fix=formal_param_num_fix;
+    }
+
     public Var_declaration_list getVar_declaration_list() {
         return var_declaration_list;
     }
@@ -51,6 +62,7 @@ public class MethodDeclaration extends Method_decl {
     public void childrenAccept(Visitor visitor) {
         if(method_identifier!=null) method_identifier.accept(visitor);
         if(formal_parameter_section!=null) formal_parameter_section.accept(visitor);
+        if(formal_param_num_fix!=null) formal_param_num_fix.accept(visitor);
         if(var_declaration_list!=null) var_declaration_list.accept(visitor);
     }
 
@@ -58,12 +70,14 @@ public class MethodDeclaration extends Method_decl {
         accept(visitor);
         if(method_identifier!=null) method_identifier.traverseTopDown(visitor);
         if(formal_parameter_section!=null) formal_parameter_section.traverseTopDown(visitor);
+        if(formal_param_num_fix!=null) formal_param_num_fix.traverseTopDown(visitor);
         if(var_declaration_list!=null) var_declaration_list.traverseTopDown(visitor);
     }
 
     public void traverseBottomUp(Visitor visitor) {
         if(method_identifier!=null) method_identifier.traverseBottomUp(visitor);
         if(formal_parameter_section!=null) formal_parameter_section.traverseBottomUp(visitor);
+        if(formal_param_num_fix!=null) formal_param_num_fix.traverseBottomUp(visitor);
         if(var_declaration_list!=null) var_declaration_list.traverseBottomUp(visitor);
         accept(visitor);
     }
@@ -81,6 +95,12 @@ public class MethodDeclaration extends Method_decl {
 
         if(formal_parameter_section!=null)
             buffer.append(formal_parameter_section.toString("  "+tab));
+        else
+            buffer.append(tab+"  null");
+        buffer.append("\n");
+
+        if(formal_param_num_fix!=null)
+            buffer.append(formal_param_num_fix.toString("  "+tab));
         else
             buffer.append(tab+"  null");
         buffer.append("\n");

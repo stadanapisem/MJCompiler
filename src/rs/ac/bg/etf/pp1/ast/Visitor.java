@@ -1,6 +1,6 @@
 // generated with ast extension for cup
 // version 0.8
-// 3/1/2018 21:47:4
+// 5/1/2018 22:2:38
 
 
 package rs.ac.bg.etf.pp1.ast;
@@ -21,6 +21,7 @@ public interface Visitor {
     public void visit(Const_identifier const_identifier);
     public void visit(Array_fld_header array_fld_header);
     public void visit(Method_decl_list method_decl_list);
+    public void visit(Formal_param_num_fix formal_param_num_fix);
     public void visit(Const_declaration_line const_declaration_line);
     public void visit(Actual_parameter actual_parameter);
     public void visit(Var_identifier var_identifier);
@@ -116,6 +117,7 @@ public interface Visitor {
     public void visit(DesignatorFieldArray DesignatorFieldArray);
     public void visit(ArrayFldIdent ArrayFldIdent);
     public void visit(ArrayIdent ArrayIdent);
+    public void visit(DesignatorThisArray DesignatorThisArray);
     public void visit(DesignatorThis DesignatorThis);
     public void visit(DesignatorArrayFld DesignatorArrayFld);
     public void visit(DesignatorFieldSingle DesignatorFieldSingle);
@@ -154,17 +156,20 @@ public interface Visitor {
     public void visit(MethodDefinition MethodDefinition);
     public void visit(FormalParameterArray FormalParameterArray);
     public void visit(FormalParameter FormalParameter);
+    public void visit(Formal_parameter_listDerived1 Formal_parameter_listDerived1);
     public void visit(FormalTermParameter FormalTermParameter);
     public void visit(FormalParameterList FormalParameterList);
     public void visit(NoParameters NoParameters);
     public void visit(FormalParameters FormalParameters);
     public void visit(MethodIdentifier MethodIdentifier);
+    public void visit(FormalParamNumFix FormalParamNumFix);
     public void visit(MethodDeclaration MethodDeclaration);
     public void visit(MethodTerm MethodTerm);
     public void visit(MethodDeclList MethodDeclList);
     public void visit(MethodDeclSection MethodDeclSection);
     public void visit(NoMethodSection NoMethodSection);
     public void visit(OptionalMethodDeclSection OptionalMethodDeclSection);
+    public void visit(Optional_extendsDerived2 Optional_extendsDerived2);
     public void visit(Optional_extendsDerived1 Optional_extendsDerived1);
     public void visit(Extends Extends);
     public void visit(ClassIdentifier ClassIdentifier);
@@ -172,10 +177,12 @@ public interface Visitor {
     public void visit(VarIdentifier VarIdentifier);
     public void visit(VarIDArray VarIDArray);
     public void visit(VarID VarID);
+    public void visit(Var_id_listDerived1 Var_id_listDerived1);
     public void visit(VarIDTerm VarIDTerm);
     public void visit(VarIDList VarIDList);
     public void visit(VarDeclarationLine VarDeclarationLine);
     public void visit(NoVariableDeclarations NoVariableDeclarations);
+    public void visit(Var_declaration_listDerived1 Var_declaration_listDerived1);
     public void visit(VarDeclarationList VarDeclarationList);
     public void visit(CharConst CharConst);
     public void visit(BoolConst BoolConst);

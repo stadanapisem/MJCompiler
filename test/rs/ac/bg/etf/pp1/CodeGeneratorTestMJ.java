@@ -18,7 +18,7 @@ public class CodeGeneratorTestMJ {
     @Rule public TemporaryFolder folder = new TemporaryFolder();
 
     @Test public void generateCode() {
-        File source = new File("test/method/methodCorrect17.mj");
+        File source = new File("test/class/classCorrect1.mj");
 
         Assert.assertTrue(source.getAbsolutePath(), source.exists());
 
@@ -32,12 +32,17 @@ public class CodeGeneratorTestMJ {
             SemanticAnalyzer semanticAnalyzerVisitor = new SemanticAnalyzer();
             prog.traverseBottomUp(semanticAnalyzerVisitor);
             //Tab.dump();
-            File objFile = new File("test.obj");
+            if (!semanticAnalyzerVisitor.errorFound) {
+                //System.out.println(semanticAnalyzerVisitor.getSyntaxTree());
+                File objFile = new File("test.obj");
 
-            CodeGenerator codeGenerator = new CodeGenerator();
-            prog.traverseBottomUp(codeGenerator);
+                CodeGenerator codeGenerator = new CodeGenerator();
+                prog.traverseBottomUp(codeGenerator);
 
-            Code.write(new FileOutputStream(objFile));
+                Code.write(new FileOutputStream(objFile));
+            } else {
+                System.out.println("THERE WERE SOME ERRORS!");
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -116,7 +116,7 @@ public class CodeGenerator extends VisitorAdaptor {
 
         Code.put(Code.enter);
         Code.put(paramCount.getCounter() + (insideClass ? 1 : 0));
-        Code.put(varCount.getCounter() + paramCount.getCounter());
+        Code.put(varCount.getCounter() + paramCount.getCounter() + (insideClass ? 1 : 0));
     }
 
     @Override public void visit(MethodDeclaration methodDeclaration) {
@@ -278,7 +278,7 @@ public class CodeGenerator extends VisitorAdaptor {
         Code.load(designatorFieldSingle.getDesignator().obj);
 
         for (Obj tmp : designatorFieldSingle.getDesignator().obj.getType().getMembers().symbols()) {
-            if (tmp.getName().equals(designatorFieldSingle.getId())) {
+            if (tmp.getName().equals(designatorFieldSingle.obj.getName())) {
                 designatorFieldSingle.obj = tmp;
                 break;
             }
@@ -289,8 +289,7 @@ public class CodeGenerator extends VisitorAdaptor {
         Code.load(designatorFieldArray.getDesignator().obj);
 
         for (Obj tmp : designatorFieldArray.getDesignator().obj.getType().getMembers().symbols()) {
-            if (tmp.getName()
-                .equals(((ArrayFldIdent) designatorFieldArray.getArray_fld_ident()).getId())) {
+            if (tmp.getName().equals(designatorFieldArray.obj.getName())) {
                 designatorFieldArray.obj = tmp;
                 break;
             }
@@ -303,15 +302,33 @@ public class CodeGenerator extends VisitorAdaptor {
         designatorFieldArray.obj = arrayIdent;
     }
 
+    @Override public void visit(ArrayFldIdent arrayFldIdent) {
+        arrayFldIdent.obj = new Obj(Obj.NO_VALUE, arrayFldIdent.getId(), new Struct(Struct.Array));
+    }
+
     @Override public void visit(DesignatorArrayFld designatorArrayFld) {
-        Code.load(designatorArrayFld.getArray_fld_header().obj);
-        designatorArrayFld.obj = null;
+        // Code.load(designatorArrayFld.getArray_fld_header().obj);
+        designatorArrayFld.obj = designatorArrayFld.getArray_fld_header().obj;
     }
 
     @Override public void visit(DesignatorThis designatorThis) {
         Code.load(currentMethodThis);
 
         designatorThis.obj = Tab.find(designatorThis.getId());
+        if (designatorThis.obj == Tab.noObj) {
+            String superName = "super." + designatorThis.getId();
+
+            for (int i = 1; designatorThis.obj == Tab.noObj && i < MAX_INHERITANCE_LEVEL; i++) {
+                designatorThis.obj = Tab.find(superName);
+                superName = "super." + superName;
+            }
+        }
+    }
+
+    @Override public void visit(DesignatorThisArray designatorThisArray) {
+        //Code.load(currentMethodThis);
+
+        designatorThisArray.obj = designatorThisArray.getArray_ident().obj;
     }
 
     @Override public void visit(PrintStatement printStatement) {
@@ -346,7 +363,8 @@ public class CodeGenerator extends VisitorAdaptor {
 
     @Override public void visit(ReadStatement readStatement) {
         Designator dest = readStatement.getDesignator();
-        if (dest.obj.getKind() == Obj.Var || dest.obj.getKind() == Obj.Elem) {
+        if (dest.obj.getKind() == Obj.Var || dest.obj.getKind() == Obj.Elem
+            || dest.obj.getKind() == Obj.Fld) {
             if (dest.obj.getType().compatibleWith(Tab.intType) || (
                 dest.obj.getType().getKind() == Struct.Array && dest.obj.getType().getElemType()
                     .compatibleWith(Tab.intType))) {
@@ -470,7 +488,6 @@ public class CodeGenerator extends VisitorAdaptor {
                 CounterVisitor.FindArrayIndex idx = new CounterVisitor.FindArrayIndex();
                 assignment.getParent().traverseTopDown(idx);
                 Code.loadConst(idx.counter);
-                report_info("Yes it is");
             }
 
             Code.load(assignment.getDesignator().obj);
@@ -712,6 +729,12 @@ public class CodeGenerator extends VisitorAdaptor {
 
     @Override public void visit(MethodCall methodCall) {
         if (!virtualCall) {
+            Obj tmp = findLocalSymbol(
+                ((MethodCallIdent) methodCall.getMethod_call_ident()).getDesignator().obj, "this");
+            //if (tmp != Tab.noObj) {
+            //    Code.load(tmp); // load this
+            //}
+
             int offset =
                 ((MethodCallIdent) methodCall.getMethod_call_ident()).getDesignator().obj.getAdr()
                     - Code.pc;
@@ -815,7 +838,7 @@ public class CodeGenerator extends VisitorAdaptor {
                         tmp = Tab.find(superName);
                         superName = "super." + superName;
                     }
-
+                    //virtualCall = true;
                 }
 
                 if (tmp == Tab.noObj) {
@@ -831,7 +854,12 @@ public class CodeGenerator extends VisitorAdaptor {
         }
 
         DesignatorSingle.obj = tmp;
-        this_var = tmp;
+        if (tmp.getKind() == Obj.Meth && currentMethodThis != null) {
+            this_var = currentMethodThis;
+            //Code.load(currentMethodThis);
+        } else {
+            this_var = tmp;
+        }
     }
 
     @Override public void visit(DesignatorArray designatorArray) {

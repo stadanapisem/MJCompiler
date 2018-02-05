@@ -20,10 +20,10 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         Log4JUtils.instance().prepareLogFile(Logger.getRootLogger());
     }
 
+    public boolean errorFound = false;
     private int returnsFound = 0;
     private Logger logger;
     private Struct currentType;
-
     private Obj currentMethod, currentMethodCall;
     private boolean foundBool = false;
     private int level = 0;
@@ -31,6 +31,8 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     private int controlPaths = 0;
     private boolean insideClass = false;
     private Tree Extention;
+    private String syntaxTree;
+    private int formalParamCount;
 
     public SemanticAnalyzer() {
         logger = Logger.getLogger(SemanticAnalyzer.class);
@@ -46,11 +48,12 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     }
 
     private void report_debug(String msg) {
-        logger.debug(String.format("%1$" + 10 + "s", "") + msg);
+        //logger.debug(String.format("%1$" + 10 + "s", "") + msg);
     }
 
     private void report_error(String msg) {
         logger.error(String.format("%1$" + 5 + "s", "") + msg);
+        errorFound = true;
         throw new Error();
     }
 
@@ -64,7 +67,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
                 new Struct(Struct.Array, currentType));
             tmp.setLevel(level);
 
-            report_info("Line " + VarIDArray.getLine() + " Defined array variable: " + ident);
+            report_info("Line " + VarIDArray.getLine() + " Found array variable: " + ident);
         }
     }
 
@@ -78,7 +81,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
                 currentType);
             tmp.setLevel(level);
 
-            report_info("Line " + VarID.getLine() + " Defined variable: " + ident);
+            report_info("Line " + VarID.getLine() + " Found variable: " + ident);
         }
     }
 
@@ -116,9 +119,8 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         } else {
             Tab.insert(Obj.Con, ConstIdentifier.getId(), currentType);
 
-            report_info(
-                "Line " + ConstIdentifier.getLine() + " Defined constant: " + ConstIdentifier
-                    .getId());
+            report_info("Line " + ConstIdentifier.getLine() + " Found constant: " + ConstIdentifier
+                .getId());
         }
     }
 
@@ -139,6 +141,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
             report_debug("Line " + ConstId.getLine() + " Constant " + ((ConstIdentifier) ConstId
                 .getConst_identifier()).getId() + " assigned with value: " + ConstId
                 .getConstant().obj.getAdr());
+            //report_info("Line " + ConstId.getLine() + " Found constant " + constObj.getName());
         }
     }
 
@@ -176,8 +179,13 @@ public class SemanticAnalyzer extends VisitorAdaptor {
             new Struct(Struct.Array, FormalParameterArray.getType().struct), 0, level));
     }
 
+    @Override public void visit(FormalParamNumFix formalParamNumFix) {
+        formalParamCount = Tab.currentScope().getnVars();
+    }
+
     @Override public void visit(MethodDeclaration methodDeclaration) {
         Tab.chainLocalSymbols(currentMethod);
+        currentMethod.setLevel(formalParamCount);
     }
 
     @Override public void visit(MethodDefinition MethodDefinition) {
@@ -452,6 +460,8 @@ public class SemanticAnalyzer extends VisitorAdaptor {
             }
         }
 
+        report_info(
+            "Line " + DesignatorSingle.getLine() + " Found name " + DesignatorSingle.getId());
         DesignatorSingle.obj = tmp;
     }
 
@@ -502,6 +512,9 @@ public class SemanticAnalyzer extends VisitorAdaptor {
             }
         }
 
+        report_info(
+            "Line " + designatorFieldSingle.getLine() + " Found name: " + designatorFieldSingle
+                .getId());
         designatorFieldSingle.obj = tmp;
     }
 
@@ -510,11 +523,26 @@ public class SemanticAnalyzer extends VisitorAdaptor {
             ((ArrayFldIdent) designatorFieldArray.getArray_fld_ident()).getId());
 
         if (tmp == Tab.noObj) {
-            report_error("Line " + designatorFieldArray.getLine() + " Name "
-                + ((ArrayFldIdent) designatorFieldArray.getArray_fld_ident()).getId()
-                + " not found");
+            if (designatorFieldArray.getDesignator().obj.getType().getKind()
+                == Struct.Class) { // maybe we need inherited fld/meth
+                String superName =
+                    "super." + ((ArrayFldIdent) designatorFieldArray.getArray_fld_ident()).getId();
+
+                for (int i = 1; tmp == Tab.noObj && i < MAX_INHERITANCE_LEVEL; i++) {
+                    tmp = findLocalSymbol(designatorFieldArray.getDesignator().obj, superName);
+                    superName = "super." + superName;
+                }
+            }
+
+            if (tmp == Tab.noObj) {
+                report_error("Line " + designatorFieldArray.getLine() + " Name "
+                    + ((ArrayFldIdent) designatorFieldArray.getArray_fld_ident()).getId()
+                    + " not found");
+            }
         }
 
+        report_info("Line " + designatorFieldArray.getLine() + " Found name "
+            + ((ArrayFldIdent) designatorFieldArray.getArray_fld_ident()).getId());
         designatorFieldArray.obj = tmp;
     }
 
@@ -552,9 +580,32 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         designatorThis.obj = Tab.find(designatorThis.getId());
 
         if (designatorThis.obj == Tab.noObj) {
-            report_error("Line " + designatorThis.getLine() + " name " + designatorThis.getId()
-                + " not declared");
+            String ident = designatorThis.getId();
+            for (int i = 0; i < MAX_INHERITANCE_LEVEL; i++) {
+                ident = "super." + ident;
+                designatorThis.obj = Tab.find(ident);
+
+                if (designatorThis.obj != Tab.noObj) {
+                    break;
+                }
+            }
+
+            if (designatorThis.obj == Tab.noObj) {
+                report_error("Line " + designatorThis.getLine() + " name " + designatorThis.getId()
+                    + " not declared");
+            }
         }
+
+        report_info("Line " + designatorThis.getLine() + " Found name " + designatorThis.getId());
+    }
+
+    @Override public void visit(DesignatorThisArray designatorThisArray) {
+        if (!insideClass) {
+            report_error("Line " + designatorThisArray.getLine()
+                + " 'this' can only be used in class methods");
+        }
+
+        designatorThisArray.obj = designatorThisArray.getArray_ident().obj;
     }
 
     @Override public void visit(MethodCallIdent methodCallIdent) {
@@ -569,6 +620,28 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     @Override public void visit(MethodCallDesignator methodCallDesignator) {
     }
 
+    private boolean compatibleParameter(Obj param, Obj actual) {
+        Struct paramType = param.getType(), actualType = actual.getType();
+
+        if (paramType.getKind() != Struct.Array && actualType.getKind() != Struct.Array) {
+            return paramType.compatibleWith(actualType);
+        } else if (paramType.getKind() == Struct.Array
+            && paramType.getElemType().getKind() == Struct.None
+            && actualType.getKind() == Struct.Array) {
+            return true;
+        }
+
+        while (paramType.getElemType() != null) {
+            paramType = paramType.getElemType();
+        }
+
+        while (actualType.getElemType() != null) {
+            actualType = actualType.getElemType();
+        }
+
+        return paramType.compatibleWith(actualType);
+    }
+
     @Override public void visit(ActualParameter actualParameter) {
         Obj[] params = currentMethodCall.getLocalSymbols()
             .toArray(new Obj[currentMethodCall.getLocalSymbols().size()]);
@@ -577,15 +650,25 @@ public class SemanticAnalyzer extends VisitorAdaptor {
             actualParameterIndex++;
         }
 
-        if (!params[actualParameterIndex].getType()
+        if (actualParameterIndex >= currentMethodCall.getLevel()) {
+            return;
+        }
+        /*if (!params[actualParameterIndex].getType()
             .compatibleWith(actualParameter.getExpression().obj.getType())) {
             if ((params[actualParameterIndex].getType().getKind() == Struct.Array
-                && params[actualParameterIndex].getType().getElemType().getKind() != Struct.None)) {
-                report_error(
-                    "Line " + actualParameter.getLine() + " Parameter " + (actualParameterIndex + 1)
-                        + " wrong type");
-            }
+                && params[actualParameterIndex].getType().getElemType().getKind() != Struct.None)
+                || (params[actualParameterIndex].getType().getKind() != Struct.Array
+                && actualParameter.getExpression().obj.getType().getKind() != Struct.Array) || (
+                actualParameter.getExpression().obj.getType().getKind() == Struct.Array
+                    && !params[actualParameterIndex].getType()
+                    .compatibleWith(actualParameter.getExpression().obj.getType().getElemType()))) {*/
+        if (!compatibleParameter(params[actualParameterIndex],
+            actualParameter.getExpression().obj)) {
+            report_error(
+                "Line " + actualParameter.getLine() + " Parameter " + (actualParameterIndex + 1)
+                    + " wrong type");
         }
+        //}
 
         actualParameterIndex++;
     }
@@ -670,6 +753,9 @@ public class SemanticAnalyzer extends VisitorAdaptor {
             Tab.insert(Obj.Type, classIdentifier.getId(), new Struct(Struct.Class));
         Tab.openScope();
         insideClass = true;
+
+        report_info(
+            "Line " + classIdentifier.getLine() + " Found class " + classIdentifier.getId());
     }
 
     @Override public void visit(Extends extend) {
@@ -687,6 +773,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
             if (!tmp.getName().equals("_vtable")) {
                 Obj inherited = Tab.insert(tmp.getKind(), "super." + tmp.getName(), tmp.getType());
                 inherited.setAdr(tmp.getAdr());
+                inherited.setLevel(tmp.getLevel());
 
                 if (tmp.getKind() == Obj.Meth) {
                     Tab.openScope();
@@ -738,9 +825,15 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         Tab.chainLocalSymbols(Program.getProgram_name().obj);
         Tab.closeScope();
         //report_debug("Program " + Program.getLine());
+        syntaxTree = Program.getProgram_name().toString() + '\n' + Program.getDeclaration_section()
+            .toString() + '\n' + Program.getMethod_decl_section().toString();
     }
 
     @Override public void visit() {
         super.visit();
+    }
+
+    public String getSyntaxTree() {
+        return syntaxTree;
     }
 }

@@ -22,7 +22,7 @@ program saban
         }
 
         void setY(int tmp) {
-            y = tmp;
+            this.y = tmp;
         }
       }
     }

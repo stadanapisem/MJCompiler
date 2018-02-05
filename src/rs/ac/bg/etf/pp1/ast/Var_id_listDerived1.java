@@ -1,0 +1,58 @@
+// generated with ast extension for cup
+// version 0.8
+// 5/1/2018 22:2:38
+
+
+package rs.ac.bg.etf.pp1.ast;
+
+public class Var_id_listDerived1 extends Var_id_list {
+
+    private Var_id var_id;
+
+    public Var_id_listDerived1 (Var_id var_id) {
+        this.var_id=var_id;
+        if(var_id!=null) var_id.setParent(this);
+    }
+
+    public Var_id getVar_id() {
+        return var_id;
+    }
+
+    public void setVar_id(Var_id var_id) {
+        this.var_id=var_id;
+    }
+
+    public void accept(Visitor visitor) {
+        visitor.visit(this);
+    }
+
+    public void childrenAccept(Visitor visitor) {
+        if(var_id!=null) var_id.accept(visitor);
+    }
+
+    public void traverseTopDown(Visitor visitor) {
+        accept(visitor);
+        if(var_id!=null) var_id.traverseTopDown(visitor);
+    }
+
+    public void traverseBottomUp(Visitor visitor) {
+        if(var_id!=null) var_id.traverseBottomUp(visitor);
+        accept(visitor);
+    }
+
+    public String toString(String tab) {
+        StringBuffer buffer=new StringBuffer();
+        buffer.append(tab);
+        buffer.append("Var_id_listDerived1(\n");
+
+        if(var_id!=null)
+            buffer.append(var_id.toString("  "+tab));
+        else
+            buffer.append(tab+"  null");
+        buffer.append("\n");
+
+        buffer.append(tab);
+        buffer.append(") [Var_id_listDerived1]");
+        return buffer.toString();
+    }
+}

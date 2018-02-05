@@ -1,6 +1,6 @@
 // generated with ast extension for cup
 // version 0.8
-// 3/1/2018 21:47:4
+// 5/1/2018 22:2:38
 
 
 package rs.ac.bg.etf.pp1.ast;
@@ -21,6 +21,7 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(Const_identifier const_identifier) { }
     public void visit(Array_fld_header array_fld_header) { }
     public void visit(Method_decl_list method_decl_list) { }
+    public void visit(Formal_param_num_fix formal_param_num_fix) { }
     public void visit(Const_declaration_line const_declaration_line) { }
     public void visit(Actual_parameter actual_parameter) { }
     public void visit(Var_identifier var_identifier) { }
@@ -116,6 +117,7 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(DesignatorFieldArray DesignatorFieldArray) { visit(); }
     public void visit(ArrayFldIdent ArrayFldIdent) { visit(); }
     public void visit(ArrayIdent ArrayIdent) { visit(); }
+    public void visit(DesignatorThisArray DesignatorThisArray) { visit(); }
     public void visit(DesignatorThis DesignatorThis) { visit(); }
     public void visit(DesignatorArrayFld DesignatorArrayFld) { visit(); }
     public void visit(DesignatorFieldSingle DesignatorFieldSingle) { visit(); }
@@ -154,17 +156,20 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(MethodDefinition MethodDefinition) { visit(); }
     public void visit(FormalParameterArray FormalParameterArray) { visit(); }
     public void visit(FormalParameter FormalParameter) { visit(); }
+    public void visit(Formal_parameter_listDerived1 Formal_parameter_listDerived1) { visit(); }
     public void visit(FormalTermParameter FormalTermParameter) { visit(); }
     public void visit(FormalParameterList FormalParameterList) { visit(); }
     public void visit(NoParameters NoParameters) { visit(); }
     public void visit(FormalParameters FormalParameters) { visit(); }
     public void visit(MethodIdentifier MethodIdentifier) { visit(); }
+    public void visit(FormalParamNumFix FormalParamNumFix) { visit(); }
     public void visit(MethodDeclaration MethodDeclaration) { visit(); }
     public void visit(MethodTerm MethodTerm) { visit(); }
     public void visit(MethodDeclList MethodDeclList) { visit(); }
     public void visit(MethodDeclSection MethodDeclSection) { visit(); }
     public void visit(NoMethodSection NoMethodSection) { visit(); }
     public void visit(OptionalMethodDeclSection OptionalMethodDeclSection) { visit(); }
+    public void visit(Optional_extendsDerived2 Optional_extendsDerived2) { visit(); }
     public void visit(Optional_extendsDerived1 Optional_extendsDerived1) { visit(); }
     public void visit(Extends Extends) { visit(); }
     public void visit(ClassIdentifier ClassIdentifier) { visit(); }
@@ -172,10 +177,12 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(VarIdentifier VarIdentifier) { visit(); }
     public void visit(VarIDArray VarIDArray) { visit(); }
     public void visit(VarID VarID) { visit(); }
+    public void visit(Var_id_listDerived1 Var_id_listDerived1) { visit(); }
     public void visit(VarIDTerm VarIDTerm) { visit(); }
     public void visit(VarIDList VarIDList) { visit(); }
     public void visit(VarDeclarationLine VarDeclarationLine) { visit(); }
     public void visit(NoVariableDeclarations NoVariableDeclarations) { visit(); }
+    public void visit(Var_declaration_listDerived1 Var_declaration_listDerived1) { visit(); }
     public void visit(VarDeclarationList VarDeclarationList) { visit(); }
     public void visit(CharConst CharConst) { visit(); }
     public void visit(BoolConst BoolConst) { visit(); }

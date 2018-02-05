@@ -30,7 +30,7 @@ program saban
       x.setX(4);
       print(x.getX()); print(eol);
       print(x.getB(4)); print(eol);
-      print(x.getB(100));
+      print(x.getB(99));
    }
 }
 

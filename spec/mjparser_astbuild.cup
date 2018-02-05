@@ -75,6 +75,7 @@ nonterminal java.lang.String addition_operator, multiplication_operator;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj term, factor, expression, addition_term_list, multiplication_factor_list;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct condition, condition_term_list, condition_term, condition_factor_list, condition_factor;
 nonterminal java.lang.String rel_operator, or_operator, and_operator;
+nonterminal Formal_param_num_fix formal_param_num_fix;
 precedence left ELSE;
 // **************************************************
 //
@@ -112,10 +113,13 @@ declaration_section ::= (DeclarationSection) declaration_section:d1 declaration:
 
     // *** VARIABLES DECLARATION
     var_declaration_list ::= (VarDeclarationList) var_declaration_list:v1 var_declaration_line:v2 {: RESULT=new VarDeclarationList(v1, v2); RESULT.setLine(v1left); :}
+                           | error {: RESULT=new Var_declaration_listDerived1(); :}
                            | (NoVariableDeclarations) {: RESULT=new NoVariableDeclarations(); :} /* epsilon */;
       var_declaration_line ::= (VarDeclarationLine) type: t var_id_list:v1 SEMI {: RESULT=new VarDeclarationLine(t, v1); RESULT.setLine(tleft); :};
+                             //| type error SEMI {:  :};
       var_id_list ::= (VarIDList) var_id_list:v1 COMMA var_id:v2 {: RESULT=new VarIDList(v1, v2); RESULT.setLine(v1left); :}
-                    | (VarIDTerm) var_id:v1 {: RESULT=new VarIDTerm(v1); RESULT.setLine(v1left); :};
+                    | (VarIDTerm) var_id:v1 {: RESULT=new VarIDTerm(v1); RESULT.setLine(v1left); :}
+                    | error COMMA var_id:v1 {: RESULT=new Var_id_listDerived1(v1); RESULT.setLine(v1left); :};
         var_id ::= (VarID) var_identifier: ident {: RESULT=new VarID(ident); RESULT.setLine(identleft); :}
                  | (VarIDArray) var_identifier: ident LSQUARE RSQUARE {: RESULT=new VarIDArray(ident); RESULT.setLine(identleft); :};
            var_identifier ::= (VarIdentifier) IDENT: id {: RESULT=new VarIdentifier(id); RESULT.setLine(idleft); :};
@@ -124,7 +128,8 @@ declaration_section ::= (DeclarationSection) declaration_section:d1 declaration:
     class_declaration ::= (ClassDeclaration) CLASS class_identifier:c1 optional_extends:o2 LBRACE var_declaration_list:v3 optional_method_decl_section:o4 RBRACE {: RESULT=new ClassDeclaration(c1, o2, v3, o4); RESULT.setLine(c1left); :};
       class_identifier ::= (ClassIdentifier) IDENT: id {: RESULT=new ClassIdentifier(id); RESULT.setLine(idleft); :};
       optional_extends ::= (Extends) EXTENDS type:t1 {: RESULT=new Extends(t1); RESULT.setLine(t1left); :}
-                         | {: RESULT=new Optional_extendsDerived1(); :} /* epsilon */;
+                         | EXTENDS error {: RESULT=new Optional_extendsDerived1(); :}
+                         | {: RESULT=new Optional_extendsDerived2(); :} /* epsilon */;
 
     // *** METHOD DECLARATION
     optional_method_decl_section ::= (OptionalMethodDeclSection) method_decl_section:m1 {: RESULT=new OptionalMethodDeclSection(m1); RESULT.setLine(m1left); :}
@@ -132,12 +137,14 @@ declaration_section ::= (DeclarationSection) declaration_section:d1 declaration:
     method_decl_section ::= (MethodDeclSection) LBRACE method_decl_list:m1 RBRACE {: RESULT=new MethodDeclSection(m1); RESULT.setLine(m1left); :};
       method_decl_list ::= (MethodDeclList) method_decl_list:m1 method_definition:m2 {: RESULT=new MethodDeclList(m1, m2); RESULT.setLine(m1left); :}
                          | (MethodTerm) {: RESULT=new MethodTerm(); :} /* epsilon */;
-        method_decl ::= (MethodDeclaration) method_identifier:m1 LPAREN formal_parameter_section:f2 RPAREN var_declaration_list:v3 {: RESULT=new MethodDeclaration(m1, f2, v3); RESULT.setLine(m1left); :};
+        method_decl ::= (MethodDeclaration) method_identifier:m1 LPAREN formal_parameter_section:f2 formal_param_num_fix:f3 RPAREN var_declaration_list:v4 {: RESULT=new MethodDeclaration(m1, f2, f3, v4); RESULT.setLine(m1left); :};
+            formal_param_num_fix ::= (FormalParamNumFix) {: RESULT=new FormalParamNumFix(); :} /* epsilon */;
           method_identifier ::= (MethodIdentifier) method_return_type:m1 IDENT: id {: RESULT=new MethodIdentifier(m1, id); RESULT.setLine(m1left); :};
           formal_parameter_section ::= (FormalParameters) formal_parameter_list:f1 {: RESULT=new FormalParameters(f1); RESULT.setLine(f1left); :}
                                      | (NoParameters) {: RESULT=new NoParameters(); :} /* epsilon */;
             formal_parameter_list ::= (FormalParameterList) formal_parameter_list:f1 COMMA formal_parameter:f2 {: RESULT=new FormalParameterList(f1, f2); RESULT.setLine(f1left); :}
-                                    | (FormalTermParameter) formal_parameter:f1 {: RESULT=new FormalTermParameter(f1); RESULT.setLine(f1left); :};
+                                    | (FormalTermParameter) formal_parameter:f1 {: RESULT=new FormalTermParameter(f1); RESULT.setLine(f1left); :}
+                                    | error COMMA formal_parameter:f1 {: RESULT=new Formal_parameter_listDerived1(f1); RESULT.setLine(f1left); :};
               formal_parameter ::= (FormalParameter) type:t1 IDENT:I2 {: RESULT=new FormalParameter(t1, I2); RESULT.setLine(t1left); :}
                                  | (FormalParameterArray) type:t1 IDENT:I2 LSQUARE RSQUARE {: RESULT=new FormalParameterArray(t1, I2); RESULT.setLine(t1left); :};
         method_definition ::= (MethodDefinition)  method_decl:m1 LBRACE statement_list:s2 RBRACE {: RESULT=new MethodDefinition(m1, s2); RESULT.setLine(m1left); :};
@@ -179,7 +186,8 @@ designator_statement ::= (Assignment) designator:d1 ASSIGN expression:e2 {: RESU
                | (DesignatorArray) array_ident:a1 expression:e2 RSQUARE {: RESULT=new DesignatorArray(a1, e2); RESULT.setLine(a1left); :}
                | (DesignatorFieldSingle) designator:d1 DOT IDENT: id {: RESULT=new DesignatorFieldSingle(d1, id); RESULT.setLine(d1left); :}
                | (DesignatorArrayFld) array_fld_header:a1 array_fld_fix:a2 {: RESULT=new DesignatorArrayFld(a1, a2); RESULT.setLine(a1left); :}
-               | (DesignatorThis) THIS DOT IDENT: id {: RESULT=new DesignatorThis(id); RESULT.setLine(idleft); :};
+               | (DesignatorThis) THIS DOT IDENT: id {: RESULT=new DesignatorThis(id); RESULT.setLine(idleft); :}
+               | (DesignatorThisArray) THIS DOT array_ident:a1 expression:e2 RSQUARE {: RESULT=new DesignatorThisArray(a1, e2); RESULT.setLine(a1left); :};
     array_ident ::= (ArrayIdent) IDENT: id LSQUARE {: RESULT=new ArrayIdent(id); RESULT.setLine(idleft); :};
     array_fld_ident ::= (ArrayFldIdent) IDENT: id LSQUARE {: RESULT=new ArrayFldIdent(id); RESULT.setLine(idleft); :};
       array_fld_header ::= (DesignatorFieldArray) designator:d1 DOT array_fld_ident:a2 {: RESULT=new DesignatorFieldArray(d1, a2); RESULT.setLine(d1left); :};
