@@ -9,10 +9,10 @@ import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.concepts.Struct;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Stack;
-
-import static rs.ac.bg.etf.pp1.SemanticAnalyzer.MAX_INHERITANCE_LEVEL;
 
 public class CodeGenerator extends VisitorAdaptor {
 
@@ -27,6 +27,7 @@ public class CodeGenerator extends VisitorAdaptor {
     private String programName;
     private int varCount = 0;
     private boolean insideClass = false;
+    private Obj currentClass = null;
     private boolean virtualCall = false;
     private byte buff[];
     private int buffptr = 0;
@@ -35,12 +36,14 @@ public class CodeGenerator extends VisitorAdaptor {
     private Obj currentMethodThis = null;
     private Obj newTypeObj = null;
     private Obj budzevina = null;
+    private List<String> inheritedMethodFix;
 
     private Obj currentMethod;
     private Struct currentType;
     private int level = 0;
 
-    private Stack<Integer> fixUpAnd, fixUpOr, fixUpAdr, breakPc, continuePc, breaksNumber;
+    private Stack<Integer> fixUpAnd, fixUpOr, fixUpAdr, breakPc, continuePc, breaksNumber,
+        continueNumber;
     private Tree Extention;
 
     public CodeGenerator() {
@@ -50,14 +53,19 @@ public class CodeGenerator extends VisitorAdaptor {
         fixUpAdr = new Stack<>();
         breakPc = new Stack<>();
         continuePc = new Stack<>();
+        continueNumber = new Stack<>();
         breaksNumber = new Stack<>();
         buff = new byte[8192];
+        inheritedMethodFix = new ArrayList<>();
         Extention = new Tree();
         Extention.insert(new Struct(Struct.None));
 
         Tab.init();
         Tab.insert(SemanticAnalyzer.boolType.getKind(), "bool",
             SemanticAnalyzer.boolType.getType());
+        put(Code.enter);
+        put(0);
+        put(0);
     }
 
     private void report_info(String msg) {
@@ -74,9 +82,20 @@ public class CodeGenerator extends VisitorAdaptor {
     }
 
     @Override public void visit(MethodIdentifier methodIdentifier) {
-        methodIdentifier.obj = Tab.insert(Obj.Meth, methodIdentifier.getId(),
-            methodIdentifier.getMethod_return_type().struct);
-
+        Obj tmp = Tab.currentScope().findSymbol(methodIdentifier.getId());
+        if (tmp != null) {
+            if (tmp.getKind() != Obj.Meth) {
+                report_error(
+                    "Line " + methodIdentifier.getLine() + " Symbol " + methodIdentifier.getId()
+                        + " already defined!");
+            } else {
+                methodIdentifier.obj = tmp;
+            }
+        } else {
+            methodIdentifier.obj = Tab.insert(Obj.Meth, methodIdentifier.getId(),
+                methodIdentifier.getMethod_return_type().struct);
+        }
+        inheritedMethodFix.remove(methodIdentifier.obj.getName());
         if (methodIdentifier.getId().equals("main")) {
             mainPC = Code.pc;
 
@@ -98,7 +117,7 @@ public class CodeGenerator extends VisitorAdaptor {
         Tab.openScope();
 
         if (insideClass) {
-            currentMethodThis = Tab.insert(Obj.Var, "this", Tab.noType);
+            currentMethodThis = Tab.insert(Obj.Var, "this", currentClass.getType());
             for (int i = 0; i < methodIdentifier.getId().length(); i++) {
                 loadConst(methodIdentifier.getId().charAt(i));
                 put(Code.putstatic);
@@ -133,6 +152,7 @@ public class CodeGenerator extends VisitorAdaptor {
         level--;
         returnFound = false;
         currentMethod = null;
+        this_var = null;
     }
 
     @Override public void visit(ReturnStatement returnStatement) {
@@ -198,8 +218,8 @@ public class CodeGenerator extends VisitorAdaptor {
         Code.put(Code.call);
         Code.put2(offset);
 
-        Code.put(Code.return_);
         Code.put(Code.exit);
+        Code.put(Code.return_);
 
         Code.dataSize = additionalData;
         Tab.chainLocalSymbols(program.getProgram_name().obj);
@@ -219,11 +239,51 @@ public class CodeGenerator extends VisitorAdaptor {
         Tab.openScope();
         Tab.insert(Obj.Fld, "_vtable", Tab.noType).setAdr(additionalData);
         classIdentifier.obj.setAdr(additionalData);
+        currentClass = classIdentifier.obj;
+        inheritedMethodFix = new ArrayList<>();
+    }
+
+    @Override public void visit(ChainVars chainVars) {
+        currentClass.setLocals(Tab.currentScope().getLocals());
     }
 
     @Override public void visit(ClassDeclaration classDeclaration) {
         insideClass = false;
+        currentClass = null;
         classDeclaration.obj = classDeclaration.getClass_identifier().obj;
+
+        if (classDeclaration.getOptional_extends() instanceof Extends) {
+            Obj base = Tab.find(
+                ((Extends) classDeclaration.getOptional_extends()).getType().getTypeName());
+
+            base.getType().getMembers().symbols().forEach(tmp -> {
+                if (!tmp.getName().equals("_vtable")
+                    && inheritedMethodFix.contains(tmp.getName())) {
+                    //Obj inherited = Tab.insert(tmp.getKind(), "super." + tmp.getName(), tmp.getType());
+                    Obj inherited = findLocalSymbol(classDeclaration.obj, tmp.getName());
+                    inherited.setAdr(tmp.getAdr());
+
+                    if (tmp.getKind() == Obj.Meth) {
+                        //String ident = "super." + tmp.getName();
+                        String ident = tmp.getName();
+                        for (int i = 0; i < ident.length(); i++) {
+                            loadConst(ident.charAt(i));
+                            put(Code.putstatic);
+                            put2(additionalData++);
+                        }
+
+                        loadConst(-1);
+                        put(Code.putstatic);
+                        put2(additionalData++);
+
+                        loadConst(tmp.getAdr());
+                        put(Code.putstatic);
+                        put2(additionalData++);
+                    }
+                }
+            });
+        }
+
         classDeclaration.obj.getType().setMembers(Tab.currentScope().getLocals());
         Tab.chainLocalSymbols(classDeclaration.obj);
         Tab.closeScope();
@@ -244,7 +304,8 @@ public class CodeGenerator extends VisitorAdaptor {
 
         base.getType().getMembers().symbols().forEach(tmp -> {
             if (!tmp.getName().equals("_vtable")) {
-                Obj inherited = Tab.insert(tmp.getKind(), "super." + tmp.getName(), tmp.getType());
+                //Obj inherited = Tab.insert(tmp.getKind(), "super." + tmp.getName(), tmp.getType());
+                Obj inherited = Tab.insert(tmp.getKind(), tmp.getName(), tmp.getType());
                 inherited.setAdr(tmp.getAdr());
 
                 if (tmp.getKind() == Obj.Meth) {
@@ -254,7 +315,9 @@ public class CodeGenerator extends VisitorAdaptor {
                     Tab.chainLocalSymbols(inherited);
                     Tab.closeScope();
 
-                    String ident = "super." + tmp.getName();
+                    inheritedMethodFix.add(tmp.getName());
+                    //String ident = "super." + tmp.getName();
+                   /* String ident = tmp.getName();
                     for (int i = 0; i < ident.length(); i++) {
                         loadConst(ident.charAt(i));
                         put(Code.putstatic);
@@ -267,15 +330,21 @@ public class CodeGenerator extends VisitorAdaptor {
 
                     loadConst(tmp.getAdr());
                     put(Code.putstatic);
-                    put2(additionalData++);
+                    put2(additionalData++);*/
                 }
             }
         });
     }
 
     @Override public void visit(DesignatorFieldSingle designatorFieldSingle) {
-        virtualCall = true;
+        Obj localMeth = findLocalSymbol(designatorFieldSingle.getDesignator().obj, designatorFieldSingle.getId());
+        if (localMeth != Tab.noObj && localMeth.getKind() == Obj.Meth) {
+            virtualCall = true;
+        }
         Code.load(designatorFieldSingle.getDesignator().obj);
+        if (this_var == null) {
+            this_var = designatorFieldSingle.getDesignator().obj;
+        }
 
         for (Obj tmp : designatorFieldSingle.getDesignator().obj.getType().getMembers().symbols()) {
             if (tmp.getName().equals(designatorFieldSingle.obj.getName())) {
@@ -287,6 +356,7 @@ public class CodeGenerator extends VisitorAdaptor {
 
     @Override public void visit(DesignatorFieldArray designatorFieldArray) {
         Code.load(designatorFieldArray.getDesignator().obj);
+
 
         for (Obj tmp : designatorFieldArray.getDesignator().obj.getType().getMembers().symbols()) {
             if (tmp.getName().equals(designatorFieldArray.obj.getName())) {
@@ -314,15 +384,19 @@ public class CodeGenerator extends VisitorAdaptor {
     @Override public void visit(DesignatorThis designatorThis) {
         Code.load(currentMethodThis);
 
-        designatorThis.obj = Tab.find(designatorThis.getId());
-        if (designatorThis.obj == Tab.noObj) {
+        for(Obj tmp : currentClass.getLocalSymbols()) {
+            if (tmp.getName().equals(designatorThis.getId())) {
+                designatorThis.obj = tmp;
+            }
+        }
+        /*if (designatorThis.obj == Tab.noObj) {
             String superName = "super." + designatorThis.getId();
 
             for (int i = 1; designatorThis.obj == Tab.noObj && i < MAX_INHERITANCE_LEVEL; i++) {
                 designatorThis.obj = Tab.find(superName);
                 superName = "super." + superName;
             }
-        }
+        }*/
     }
 
     @Override public void visit(DesignatorThisArray designatorThisArray) {
@@ -496,6 +570,8 @@ public class CodeGenerator extends VisitorAdaptor {
             Code.put2(0);
             newTypeObj = null;
         }
+
+        this_var = null;
     }
 
     @Override public void visit(Increment increment) {
@@ -534,6 +610,7 @@ public class CodeGenerator extends VisitorAdaptor {
 
     @Override public void visit(ConstantFactor constantFactor) {
         constantFactor.obj = new Obj(Obj.NO_VALUE, "", constantFactor.getConstant().obj.getType());
+        constantFactor.obj.setAdr(constantFactor.getConstant().obj.getAdr());
         if (constantFactor.getConstant().obj.getType() == Tab.intType) {
             budzevina = constantFactor.getConstant().obj;
             Code.load(constantFactor.getConstant().obj);
@@ -673,6 +750,7 @@ public class CodeGenerator extends VisitorAdaptor {
     @Override public void visit(RememberPc rememberPc) {
         continuePc.push(Code.pc);
         breaksNumber.push(0);
+        continueNumber.push(0);
     }
 
     @Override public void visit(DoStatement doStatement) {
@@ -690,8 +768,20 @@ public class CodeGenerator extends VisitorAdaptor {
         continuePc.pop();
     }
 
+    @Override public void visit(WhileCondPcFix whileCondPcFix) {
+        if (!continueNumber.empty()) {
+            int numOfContinue = continueNumber.pop();
+            while (numOfContinue > 0) {
+                numOfContinue--;
+                Code.fixup(continuePc.pop());
+            }
+        }
+    }
+
     @Override public void visit(ContinueStatement continueStatement) {
-        Code.putJump(continuePc.peek());
+        Code.putJump(0);
+        continuePc.push(Code.pc - 2);
+        continueNumber.push(continueNumber.pop() + 1);
     }
 
     @Override public void visit(BreakStatement breakStatement) {
@@ -729,8 +819,8 @@ public class CodeGenerator extends VisitorAdaptor {
 
     @Override public void visit(MethodCall methodCall) {
         if (!virtualCall) {
-            Obj tmp = findLocalSymbol(
-                ((MethodCallIdent) methodCall.getMethod_call_ident()).getDesignator().obj, "this");
+            //Obj tmp = findLocalSymbol(
+            //    ((MethodCallIdent) methodCall.getMethod_call_ident()).getDesignator().obj, "this");
             //if (tmp != Tab.noObj) {
             //    Code.load(tmp); // load this
             //}
@@ -743,6 +833,14 @@ public class CodeGenerator extends VisitorAdaptor {
             Code.put2(offset);
         } else {
             Code.load(this_var);
+            if (this_var.getType().getKind() == Struct.Array) {
+                CounterVisitor.FindArrayIndex idx = new CounterVisitor.FindArrayIndex();
+                ((MethodCallIdent)methodCall.getMethod_call_ident()).getDesignator().getParent().traverseBottomUp(idx);
+
+                // Code.loadConst(idx.getCounter());
+                Code.put(Code.aload);
+            }
+
             Code.put(Code.getfield);
             Code.put2(0);
 
@@ -759,6 +857,8 @@ public class CodeGenerator extends VisitorAdaptor {
 
             virtualCall = false;
         }
+
+        this_var = null;
     }
 
     private Obj findLocalSymbol(Obj var, String symbol) {
@@ -791,9 +891,9 @@ public class CodeGenerator extends VisitorAdaptor {
             Code.load(this_var);
             if (this_var.getType().getKind() == Struct.Array) {
                 CounterVisitor.FindArrayIndex idx = new CounterVisitor.FindArrayIndex();
-                methodCallDesignator.getParent().traverseTopDown(idx);
+                ((MethodCallIdent)methodCallDesignator.getMethod_call_ident()).getDesignator().getParent().traverseBottomUp(idx);
 
-                Code.loadConst(idx.getCounter());
+               // Code.loadConst(idx.getCounter());
                 Code.put(Code.aload);
             }
 
@@ -807,13 +907,13 @@ public class CodeGenerator extends VisitorAdaptor {
                     .getName();
             Obj tmp = Tab.noObj;
             int i = 0;
-            do {
-                tmp = findLocalSymbol(this_var, methodName);
-                if (tmp != Tab.noObj) {
-                    break;
-                }
-                methodName = "super." + methodName;
-            } while (tmp == Tab.noObj && i++ < MAX_INHERITANCE_LEVEL);
+            //do {
+            tmp = findLocalSymbol(this_var, methodName);
+            //                if (tmp != Tab.noObj) {
+            //                    break;
+            //                }
+            //                methodName = "super." + methodName;
+            //            } while (tmp == Tab.noObj && i++ < MAX_INHERITANCE_LEVEL);
 
             for (i = 0; i < methodName.length(); i++) {
                 Code.put4(methodName.charAt(i));
@@ -823,15 +923,20 @@ public class CodeGenerator extends VisitorAdaptor {
 
             virtualCall = false;
         }
+        this_var = null;
     }
 
     @Override public void visit(DesignatorSingle DesignatorSingle) {
+        if (insideClass) {
+            virtualCall = true;
+        }
+
         Obj tmp = Tab.find(DesignatorSingle.getId());
         if (tmp == Tab.noObj) {
-            tmp = Tab.find(DesignatorSingle.getId());
+            //tmp = Tab.find(DesignatorSingle.getId());
 
             if (tmp == Tab.noObj) {
-                if (insideClass) {
+                /*if (insideClass) {
                     String superName = "super." + DesignatorSingle.getId();
 
                     for (int i = 1; tmp == Tab.noObj && i < MAX_INHERITANCE_LEVEL; i++) {
@@ -839,7 +944,7 @@ public class CodeGenerator extends VisitorAdaptor {
                         superName = "super." + superName;
                     }
                     //virtualCall = true;
-                }
+                }*/
 
                 if (tmp == Tab.noObj) {
                     report_error(
@@ -856,9 +961,14 @@ public class CodeGenerator extends VisitorAdaptor {
         DesignatorSingle.obj = tmp;
         if (tmp.getKind() == Obj.Meth && currentMethodThis != null) {
             this_var = currentMethodThis;
+            if (insideClass) {
+                Code.load(this_var);
+            }
             //Code.load(currentMethodThis);
         } else {
-            this_var = tmp;
+            if (this_var == null) {
+                this_var = tmp;
+            }
         }
     }
 
@@ -869,15 +979,16 @@ public class CodeGenerator extends VisitorAdaptor {
     @Override public void visit(ArrayIdent arrayIdent) {
         String ident = arrayIdent.getId();
         Obj tmp = Tab.find(ident);
+        this_var = tmp;
         if (tmp == Tab.noObj) {
-            for (int i = 0; i < MAX_INHERITANCE_LEVEL; i++) {
+            /*for (int i = 0; i < MAX_INHERITANCE_LEVEL; i++) {
                 ident = "super." + ident;
                 tmp = Tab.find(ident);
 
                 if (tmp != Tab.noObj) {
                     break;
                 }
-            }
+            }*/
         }
 
         arrayIdent.obj = new Obj(Obj.Elem, tmp.getName(), tmp.getType().getElemType());
@@ -918,9 +1029,11 @@ public class CodeGenerator extends VisitorAdaptor {
     }
 
     @Override public void visit(ConstId ConstId) {
-        Obj constObj = ConstId.getConstant().obj;
-
+        Obj constObj =
+            Tab.insert(Obj.Con, ((ConstIdentifier) ConstId.getConst_identifier()).getId(),
+                currentType);
         constObj.setAdr(ConstId.getConstant().obj.getAdr());
+
         report_debug("Line " + ConstId.getLine() + " Constant " + ((ConstIdentifier) ConstId
             .getConst_identifier()).getId() + " assigned with value: " + ConstId.getConstant().obj
             .getAdr());
@@ -946,10 +1059,6 @@ public class CodeGenerator extends VisitorAdaptor {
         if (currentMethod == null && !insideClass) {// global var
             tmp.setAdr(additionalData++);
         }
-    }
-
-    @Override public void visit(ConstIdentifier constIdentifier) {
-        Tab.insert(Obj.Con, constIdentifier.getId(), currentType);
     }
 
     @Override public void visit(FormalParameter FormalParameter) {

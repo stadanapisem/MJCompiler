@@ -1,13 +1,13 @@
 // generated with ast extension for cup
 // version 0.8
-// 5/1/2018 22:2:38
+// 6/1/2018 21:51:44
 
 
 package rs.ac.bg.etf.pp1.ast;
 
-public class Var_declaration_listDerived1 extends Var_declaration_list {
+public class ConditionDerived1 extends Condition {
 
-    public Var_declaration_listDerived1 () {
+    public ConditionDerived1 () {
     }
 
     public void accept(Visitor visitor) {
@@ -28,10 +28,10 @@ public class Var_declaration_listDerived1 extends Var_declaration_list {
     public String toString(String tab) {
         StringBuffer buffer=new StringBuffer();
         buffer.append(tab);
-        buffer.append("Var_declaration_listDerived1(\n");
+        buffer.append("ConditionDerived1(\n");
 
         buffer.append(tab);
-        buffer.append(") [Var_declaration_listDerived1]");
+        buffer.append(") [ConditionDerived1]");
         return buffer.toString();
     }
 }

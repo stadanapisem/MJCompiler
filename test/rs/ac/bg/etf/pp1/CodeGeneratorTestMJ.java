@@ -18,7 +18,7 @@ public class CodeGeneratorTestMJ {
     @Rule public TemporaryFolder folder = new TemporaryFolder();
 
     @Test public void generateCode() {
-        File source = new File("test/class/classCorrect1.mj");
+        File source = new File("test/variable/variableER1.mj");
 
         Assert.assertTrue(source.getAbsolutePath(), source.exists());
 

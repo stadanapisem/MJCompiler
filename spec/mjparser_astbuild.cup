@@ -47,6 +47,7 @@ nonterminal
 nonterminal Formal_parameter_list formal_parameter_list;
 nonterminal Formal_parameter formal_parameter;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj class_declaration, class_identifier;
+nonterminal Chain_vars_fix chain_vars_fix;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj const_id, method_identifier;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj constant, char_const, numeric_const, bool_const;
 
@@ -76,6 +77,7 @@ nonterminal rs.etf.pp1.symboltable.concepts.Obj term, factor, expression, additi
 nonterminal rs.etf.pp1.symboltable.concepts.Struct condition, condition_term_list, condition_term, condition_factor_list, condition_factor;
 nonterminal java.lang.String rel_operator, or_operator, and_operator;
 nonterminal Formal_param_num_fix formal_param_num_fix;
+nonterminal Begin_cond_pc_fix begin_cond_pc_fix;
 precedence left ELSE;
 // **************************************************
 //
@@ -113,10 +115,9 @@ declaration_section ::= (DeclarationSection) declaration_section:d1 declaration:
 
     // *** VARIABLES DECLARATION
     var_declaration_list ::= (VarDeclarationList) var_declaration_list:v1 var_declaration_line:v2 {: RESULT=new VarDeclarationList(v1, v2); RESULT.setLine(v1left); :}
-                           | error {: RESULT=new Var_declaration_listDerived1(); :}
                            | (NoVariableDeclarations) {: RESULT=new NoVariableDeclarations(); :} /* epsilon */;
-      var_declaration_line ::= (VarDeclarationLine) type: t var_id_list:v1 SEMI {: RESULT=new VarDeclarationLine(t, v1); RESULT.setLine(tleft); :};
-                             //| type error SEMI {:  :};
+      var_declaration_line ::= (VarDeclarationLine) type: t var_id_list:v1 SEMI {: RESULT=new VarDeclarationLine(t, v1); RESULT.setLine(tleft); :}
+                             | error SEMI {: System.err.println("error recovered on signle variable declaration");  :} {: RESULT=new Var_declaration_lineDerived1(); :};
       var_id_list ::= (VarIDList) var_id_list:v1 COMMA var_id:v2 {: RESULT=new VarIDList(v1, v2); RESULT.setLine(v1left); :}
                     | (VarIDTerm) var_id:v1 {: RESULT=new VarIDTerm(v1); RESULT.setLine(v1left); :}
                     | error COMMA var_id:v1 {: RESULT=new Var_id_listDerived1(v1); RESULT.setLine(v1left); :};
@@ -125,10 +126,11 @@ declaration_section ::= (DeclarationSection) declaration_section:d1 declaration:
            var_identifier ::= (VarIdentifier) IDENT: id {: RESULT=new VarIdentifier(id); RESULT.setLine(idleft); :};
 
     // *** CLASS DECLARATION
-    class_declaration ::= (ClassDeclaration) CLASS class_identifier:c1 optional_extends:o2 LBRACE var_declaration_list:v3 optional_method_decl_section:o4 RBRACE {: RESULT=new ClassDeclaration(c1, o2, v3, o4); RESULT.setLine(c1left); :};
+    class_declaration ::= (ClassDeclaration) CLASS class_identifier:c1 optional_extends:o2 LBRACE var_declaration_list:v3 chain_vars_fix:c4 optional_method_decl_section:o5 RBRACE {: RESULT=new ClassDeclaration(c1, o2, v3, c4, o5); RESULT.setLine(c1left); :};
+        chain_vars_fix ::= (ChainVars) {: RESULT=new ChainVars(); :} /* epsilon */;
       class_identifier ::= (ClassIdentifier) IDENT: id {: RESULT=new ClassIdentifier(id); RESULT.setLine(idleft); :};
       optional_extends ::= (Extends) EXTENDS type:t1 {: RESULT=new Extends(t1); RESULT.setLine(t1left); :}
-                         | EXTENDS error {: RESULT=new Optional_extendsDerived1(); :}
+                         | EXTENDS error {: System.err.println("error recovered on extend"); :} {: RESULT=new Optional_extendsDerived1(); :}
                          | {: RESULT=new Optional_extendsDerived2(); :} /* epsilon */;
 
     // *** METHOD DECLARATION
@@ -137,11 +139,12 @@ declaration_section ::= (DeclarationSection) declaration_section:d1 declaration:
     method_decl_section ::= (MethodDeclSection) LBRACE method_decl_list:m1 RBRACE {: RESULT=new MethodDeclSection(m1); RESULT.setLine(m1left); :};
       method_decl_list ::= (MethodDeclList) method_decl_list:m1 method_definition:m2 {: RESULT=new MethodDeclList(m1, m2); RESULT.setLine(m1left); :}
                          | (MethodTerm) {: RESULT=new MethodTerm(); :} /* epsilon */;
-        method_decl ::= (MethodDeclaration) method_identifier:m1 LPAREN formal_parameter_section:f2 formal_param_num_fix:f3 RPAREN var_declaration_list:v4 {: RESULT=new MethodDeclaration(m1, f2, f3, v4); RESULT.setLine(m1left); :};
+        method_decl ::= (MethodDeclaration) method_identifier:m1 LPAREN formal_parameter_section:f2 formal_param_num_fix:f3 var_declaration_list:v4 {: RESULT=new MethodDeclaration(m1, f2, f3, v4); RESULT.setLine(m1left); :};
             formal_param_num_fix ::= (FormalParamNumFix) {: RESULT=new FormalParamNumFix(); :} /* epsilon */;
           method_identifier ::= (MethodIdentifier) method_return_type:m1 IDENT: id {: RESULT=new MethodIdentifier(m1, id); RESULT.setLine(m1left); :};
-          formal_parameter_section ::= (FormalParameters) formal_parameter_list:f1 {: RESULT=new FormalParameters(f1); RESULT.setLine(f1left); :}
-                                     | (NoParameters) {: RESULT=new NoParameters(); :} /* epsilon */;
+          formal_parameter_section ::= (FormalParameters) formal_parameter_list:f1 RPAREN {: RESULT=new FormalParameters(f1); RESULT.setLine(f1left); :}
+                                     | error RPAREN {: RESULT=new Formal_parameter_sectionDerived1(); :}
+                                     | (NoParameters) /* epsilon */ RPAREN {: RESULT=new NoParameters(); :};
             formal_parameter_list ::= (FormalParameterList) formal_parameter_list:f1 COMMA formal_parameter:f2 {: RESULT=new FormalParameterList(f1, f2); RESULT.setLine(f1left); :}
                                     | (FormalTermParameter) formal_parameter:f1 {: RESULT=new FormalTermParameter(f1); RESULT.setLine(f1left); :}
                                     | error COMMA formal_parameter:f1 {: RESULT=new Formal_parameter_listDerived1(f1); RESULT.setLine(f1left); :};
@@ -171,13 +174,15 @@ statement_list ::= (StatementList) statement_list:s1 statement:s2 {: RESULT=new 
       optional_else ::= else_jmp_fix:e1 statement:s2 {: RESULT=new Optional_elseDerived1(e1, s2); RESULT.setLine(e1left); :}
                       | {: RESULT=new Optional_elseDerived2(); :} /* epsilon */;
         else_jmp_fix ::= (ElseFix) ELSE {: RESULT=new ElseFix(); :};
-    do_statement ::= remember_pc:r1 statement:s2 WHILE LPAREN condition:c3 RPAREN {: RESULT=new Do_statementDerived1(r1, s2, c3); RESULT.setLine(r1left); :};
+    do_statement ::= remember_pc:r1 statement:s2 WHILE begin_cond_pc_fix:b3 LPAREN condition:c4 RPAREN {: RESULT=new Do_statementDerived1(r1, s2, b3, c4); RESULT.setLine(r1left); :};
+        begin_cond_pc_fix ::= (WhileCondPcFix) {: RESULT=new WhileCondPcFix(); :} /* epsilon */;
         remember_pc ::= (RememberPc) DO {: RESULT=new RememberPc(); :};
     break_statement ::= BREAK {: RESULT=new Break_statementDerived1(); :};
     continue_statement ::= CONTINUE {: RESULT=new Continue_statementDerived1(); :};
 
 // ***************** DESIGNATORS ********************
 designator_statement ::= (Assignment) designator:d1 ASSIGN expression:e2 {: RESULT=new Assignment(d1, e2); RESULT.setLine(d1left); :}
+                       | error {: System.err.println("error recovered on assignment"); :} {: RESULT=new Designator_statementDerived1(); :}
                        | (Increment) designator:d1 INC {: RESULT=new Increment(d1); RESULT.setLine(d1left); :}
                        | (Decrement) designator:d1 DEC {: RESULT=new Decrement(d1); RESULT.setLine(d1left); :}
                        | (MethodCallDesignator) method_call_ident:m1 actual_parameter_section:a2 RPAREN {: RESULT=new MethodCallDesignator(m1, a2); RESULT.setLine(m1left); :};
@@ -219,7 +224,8 @@ expression ::= (AddExpression) addition_term_list:a1 {: RESULT=new AddExpression
            | (MethodCall) method_call_ident:m1 actual_parameter_section:a2 RPAREN {: RESULT=new MethodCall(m1, a2); RESULT.setLine(m1left); :};
 
 // ***************** CONDITIONS *********************
-condition ::= (CondExpression) condition_term_list:c1 {: RESULT=new CondExpression(c1); RESULT.setLine(c1left); :};
+condition ::= (CondExpression) condition_term_list:c1 {: RESULT=new CondExpression(c1); RESULT.setLine(c1left); :}
+            | error {: RESULT=new ConditionDerived1(); :};
   condition_term_list ::= (CondTermList) condition_term_list:c1 or_operator:o2 condition_term:c3 {: RESULT=new CondTermList(c1, o2, c3); RESULT.setLine(c1left); :}
                         | (CondTerminalTerm) condition_term:c1 {: RESULT=new CondTerminalTerm(c1); RESULT.setLine(c1left); :};
      or_operator ::= (OperatorOr) OR {: RESULT=new OperatorOr(); :};

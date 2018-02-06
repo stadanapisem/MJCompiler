@@ -1,0 +1,18 @@
+program saban
+
+{
+   int a (int a, int b) {
+       return a + b;
+   }
+
+   void main() int niz[]; {
+      print(a(3, 4)); print(eol);
+
+      niz = new int[10];
+      niz[1] = 10;
+      niz[2] = 1;
+      niz[1]++;
+
+      print(niz[niz[2]]);
+   }
+}

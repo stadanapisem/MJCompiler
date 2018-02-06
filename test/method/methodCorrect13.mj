@@ -5,8 +5,8 @@ program saban
        int a;
        bool b;
     {
-       a = 2;
-       b = false;
+       a = 4;
+       b = true;
        if (a < 3 || b && false) {
           print('y');
           print(eol);

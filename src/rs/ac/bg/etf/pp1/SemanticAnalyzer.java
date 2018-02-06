@@ -9,6 +9,7 @@ import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.concepts.Struct;
 
 import java.util.Collection;
+import java.util.Collections;
 
 public class SemanticAnalyzer extends VisitorAdaptor {
 
@@ -146,14 +147,19 @@ public class SemanticAnalyzer extends VisitorAdaptor {
     }
 
     @Override public void visit(MethodIdentifier MethodIdentifier) {
-        if (Tab.currentScope().findSymbol(MethodIdentifier.getId()) != null) {
-            report_error(
-                "Line " + MethodIdentifier.getLine() + " Symbol " + MethodIdentifier.getId()
-                    + " already defined!");
+        Obj tmp = Tab.currentScope().findSymbol(MethodIdentifier.getId());
+        if (tmp != null) {
+            if (tmp.getKind() != Obj.Meth) {
+                report_error(
+                    "Line " + MethodIdentifier.getLine() + " Symbol " + MethodIdentifier.getId()
+                        + " already defined!");
+            } else {
+                MethodIdentifier.obj = tmp;
+            }
+        } else {
+            MethodIdentifier.obj = Tab.insert(Obj.Meth, MethodIdentifier.getId(),
+                MethodIdentifier.getMethod_return_type().struct);
         }
-
-        MethodIdentifier.obj = Tab.insert(Obj.Meth, MethodIdentifier.getId(),
-            MethodIdentifier.getMethod_return_type().struct);
 
         currentMethod = MethodIdentifier.obj;
         Tab.openScope();
@@ -444,14 +450,14 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         Obj tmp = Tab.find(DesignatorSingle.getId());
         if (tmp == Tab.noObj) {
 
-            if (insideClass) { // maybe we need inherited fld/meth
+            /*if (insideClass) { // maybe we need inherited fld/meth
                 String superName = "super." + DesignatorSingle.getId();
 
                 for (int i = 1; tmp == Tab.noObj && i < MAX_INHERITANCE_LEVEL; i++) {
                     tmp = Tab.find(superName);
                     superName = "super." + superName;
                 }
-            }
+            }*/
 
             if (tmp == Tab.noObj) {
                 report_error(
@@ -482,6 +488,10 @@ public class SemanticAnalyzer extends VisitorAdaptor {
             objs = var.getLocalSymbols();
         }
 
+        if (objs == Collections.<Obj>emptyList() && var.getType().getKind() == Struct.Class) {
+            objs = var.getType().getMembers().symbols();
+        }
+
         for (Obj tmp : objs) {
             if (tmp.getName().equals(symbol))
                 return tmp;
@@ -495,7 +505,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
             designatorFieldSingle.getId());
 
         if (tmp == Tab.noObj) {
-            if (designatorFieldSingle.getDesignator().obj.getType().getKind()
+            /*if (designatorFieldSingle.getDesignator().obj.getType().getKind()
                 == Struct.Class) { // maybe we need inherited fld/meth
                 String superName = "super." + designatorFieldSingle.getId();
 
@@ -503,7 +513,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
                     tmp = findLocalSymbol(designatorFieldSingle.getDesignator().obj, superName);
                     superName = "super." + superName;
                 }
-            }
+            }*/
 
             if (tmp == Tab.noObj) {
                 report_error(
@@ -523,7 +533,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
             ((ArrayFldIdent) designatorFieldArray.getArray_fld_ident()).getId());
 
         if (tmp == Tab.noObj) {
-            if (designatorFieldArray.getDesignator().obj.getType().getKind()
+            /*if (designatorFieldArray.getDesignator().obj.getType().getKind()
                 == Struct.Class) { // maybe we need inherited fld/meth
                 String superName =
                     "super." + ((ArrayFldIdent) designatorFieldArray.getArray_fld_ident()).getId();
@@ -532,7 +542,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
                     tmp = findLocalSymbol(designatorFieldArray.getDesignator().obj, superName);
                     superName = "super." + superName;
                 }
-            }
+            }*/
 
             if (tmp == Tab.noObj) {
                 report_error("Line " + designatorFieldArray.getLine() + " Name "
@@ -554,14 +564,14 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         String ident = arrayIdent.getId();
         Obj tmp = Tab.find(ident);
         if (tmp == Tab.noObj) {
-            for (int i = 0; i < MAX_INHERITANCE_LEVEL; i++) {
+            /*for (int i = 0; i < MAX_INHERITANCE_LEVEL; i++) {
                 ident = "super." + ident;
                 tmp = Tab.find(ident);
 
                 if (tmp != Tab.noObj) {
                     break;
                 }
-            }
+            }*/
 
             if (tmp == Tab.noObj) {
                 report_error("Line " + arrayIdent.getLine() + " name " + ident + " not declared");
@@ -580,7 +590,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
         designatorThis.obj = Tab.find(designatorThis.getId());
 
         if (designatorThis.obj == Tab.noObj) {
-            String ident = designatorThis.getId();
+            /*String ident = designatorThis.getId();
             for (int i = 0; i < MAX_INHERITANCE_LEVEL; i++) {
                 ident = "super." + ident;
                 designatorThis.obj = Tab.find(ident);
@@ -588,7 +598,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
                 if (designatorThis.obj != Tab.noObj) {
                     break;
                 }
-            }
+            }*/
 
             if (designatorThis.obj == Tab.noObj) {
                 report_error("Line " + designatorThis.getLine() + " name " + designatorThis.getId()
@@ -771,7 +781,8 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 
         parentObj.getType().getMembers().symbols().forEach(tmp -> {
             if (!tmp.getName().equals("_vtable")) {
-                Obj inherited = Tab.insert(tmp.getKind(), "super." + tmp.getName(), tmp.getType());
+                //Obj inherited = Tab.insert(tmp.getKind(), "super." + tmp.getName(), tmp.getType());
+                Obj inherited = Tab.insert(tmp.getKind(), tmp.getName(), tmp.getType());
                 inherited.setAdr(tmp.getAdr());
                 inherited.setLevel(tmp.getLevel());
 

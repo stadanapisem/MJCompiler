@@ -29,6 +29,7 @@ nonterminal declaration_section, declaration,
             method_decl_section, optional_method_decl_section, method_decl_list, method_decl,  method_definition,
             formal_parameter_section, formal_parameter_list, formal_parameter;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj class_declaration, class_identifier;
+nonterminal chain_vars_fix;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj const_id, method_identifier;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj constant, char_const, numeric_const, bool_const;
 
@@ -41,7 +42,7 @@ nonterminal java.lang.String addition_operator, multiplication_operator;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj term, factor, expression, addition_term_list, multiplication_factor_list;
 nonterminal rs.etf.pp1.symboltable.concepts.Struct condition, condition_term_list, condition_term, condition_factor_list, condition_factor;
 nonterminal java.lang.String rel_operator, or_operator, and_operator;
-nonterminal formal_param_num_fix;
+nonterminal formal_param_num_fix, begin_cond_pc_fix;
 precedence left ELSE;
 // **************************************************
 //
@@ -79,10 +80,9 @@ declaration_section ::= (DeclarationSection) declaration_section declaration
 
     // *** VARIABLES DECLARATION
     var_declaration_list ::= (VarDeclarationList) var_declaration_list var_declaration_line
-                           | error
                            | (NoVariableDeclarations) /* epsilon */;
-      var_declaration_line ::= (VarDeclarationLine) type: t var_id_list SEMI;
-                             //| type error SEMI {:  :};
+      var_declaration_line ::= (VarDeclarationLine) type: t var_id_list SEMI
+                             | error SEMI {: System.err.println("error recovered on signle variable declaration");  :};
       var_id_list ::= (VarIDList) var_id_list COMMA var_id
                     | (VarIDTerm) var_id
                     | error COMMA var_id;
@@ -91,10 +91,11 @@ declaration_section ::= (DeclarationSection) declaration_section declaration
            var_identifier ::= (VarIdentifier) IDENT: id;
 
     // *** CLASS DECLARATION
-    class_declaration ::= (ClassDeclaration) CLASS class_identifier optional_extends LBRACE var_declaration_list optional_method_decl_section RBRACE;
+    class_declaration ::= (ClassDeclaration) CLASS class_identifier optional_extends LBRACE var_declaration_list chain_vars_fix optional_method_decl_section RBRACE;
+        chain_vars_fix ::= (ChainVars) /* epsilon */;
       class_identifier ::= (ClassIdentifier) IDENT: id;
       optional_extends ::= (Extends) EXTENDS type
-                         | EXTENDS error
+                         | EXTENDS error {: System.err.println("error recovered on extend"); :}
                          | /* epsilon */;
 
     // *** METHOD DECLARATION
@@ -103,11 +104,12 @@ declaration_section ::= (DeclarationSection) declaration_section declaration
     method_decl_section ::= (MethodDeclSection) LBRACE method_decl_list RBRACE;
       method_decl_list ::= (MethodDeclList) method_decl_list method_definition
                          | (MethodTerm) /* epsilon */;
-        method_decl ::= (MethodDeclaration) method_identifier LPAREN formal_parameter_section formal_param_num_fix RPAREN var_declaration_list;
+        method_decl ::= (MethodDeclaration) method_identifier LPAREN formal_parameter_section formal_param_num_fix var_declaration_list;
             formal_param_num_fix ::= (FormalParamNumFix) /* epsilon */;
           method_identifier ::= (MethodIdentifier) method_return_type IDENT: id;
-          formal_parameter_section ::= (FormalParameters) formal_parameter_list
-                                     | (NoParameters) /* epsilon */;
+          formal_parameter_section ::= (FormalParameters) formal_parameter_list RPAREN
+                                     | error RPAREN
+                                     | (NoParameters) /* epsilon */ RPAREN;
             formal_parameter_list ::= (FormalParameterList) formal_parameter_list COMMA formal_parameter
                                     | (FormalTermParameter) formal_parameter
                                     | error COMMA formal_parameter;
@@ -137,13 +139,15 @@ statement_list ::= (StatementList) statement_list statement
       optional_else ::= else_jmp_fix statement
                       | /* epsilon */;
         else_jmp_fix ::= (ElseFix) ELSE;
-    do_statement ::= remember_pc statement WHILE LPAREN condition RPAREN;
+    do_statement ::= remember_pc statement WHILE begin_cond_pc_fix LPAREN condition RPAREN;
+        begin_cond_pc_fix ::= (WhileCondPcFix) /* epsilon */;
         remember_pc ::= (RememberPc) DO;
     break_statement ::= BREAK;
     continue_statement ::= CONTINUE;
 
 // ***************** DESIGNATORS ********************
 designator_statement ::= (Assignment) designator ASSIGN expression
+                       | error {: System.err.println("error recovered on assignment"); :}
                        | (Increment) designator INC
                        | (Decrement) designator DEC
                        | (MethodCallDesignator) method_call_ident actual_parameter_section RPAREN;
@@ -185,7 +189,8 @@ expression ::= (AddExpression) addition_term_list;
            | (MethodCall) method_call_ident actual_parameter_section RPAREN;
 
 // ***************** CONDITIONS *********************
-condition ::= (CondExpression) condition_term_list;
+condition ::= (CondExpression) condition_term_list
+            | error;
   condition_term_list ::= (CondTermList) condition_term_list or_operator condition_term
                         | (CondTerminalTerm) condition_term;
      or_operator ::= (OperatorOr) OR;

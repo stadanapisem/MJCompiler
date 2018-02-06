@@ -1,79 +1,81 @@
 // generated with ast extension for cup
 // version 0.8
-// 5/1/2018 22:2:38
+// 6/1/2018 21:51:44
 
 
 package rs.ac.bg.etf.pp1.ast;
 
 public abstract class VisitorAdaptor implements Visitor { 
 
-    public void visit(Condition_term condition_term) { }
-    public void visit(Array_ident array_ident) { }
-    public void visit(Actual_parameter_section actual_parameter_section) { }
-    public void visit(Designator designator) { }
-    public void visit(Method_return_type method_return_type) { }
-    public void visit(Break_statement break_statement) { }
-    public void visit(Read_statement read_statement) { }
-    public void visit(Method_call_ident method_call_ident) { }
-    public void visit(Condition condition) { }
-    public void visit(Method_definition method_definition) { }
-    public void visit(Optional_extends optional_extends) { }
-    public void visit(Const_identifier const_identifier) { }
-    public void visit(Array_fld_header array_fld_header) { }
-    public void visit(Method_decl_list method_decl_list) { }
-    public void visit(Formal_param_num_fix formal_param_num_fix) { }
-    public void visit(Const_declaration_line const_declaration_line) { }
-    public void visit(Actual_parameter actual_parameter) { }
-    public void visit(Var_identifier var_identifier) { }
-    public void visit(Method_identifier method_identifier) { }
-    public void visit(Const_id_list const_id_list) { }
-    public void visit(Class_identifier class_identifier) { }
-    public void visit(Rel_operator rel_operator) { }
-    public void visit(Formal_parameter formal_parameter) { }
-    public void visit(If_statement if_statement) { }
-    public void visit(Declaration_section declaration_section) { }
-    public void visit(Method_decl_section method_decl_section) { }
-    public void visit(Condition_factor condition_factor) { }
-    public void visit(Print_statement print_statement) { }
-    public void visit(And_operator and_operator) { }
-    public void visit(Designator_statement designator_statement) { }
-    public void visit(Formal_parameter_list formal_parameter_list) { }
-    public void visit(Else_jmp_fix else_jmp_fix) { }
     public void visit(Or_operator or_operator) { }
-    public void visit(Expression expression) { }
-    public void visit(Multiplication_operator multiplication_operator) { }
-    public void visit(Optional_method_decl_section optional_method_decl_section) { }
-    public void visit(Statement statement) { }
-    public void visit(Remember_pc remember_pc) { }
     public void visit(Var_declaration_line var_declaration_line) { }
-    public void visit(Continue_statement continue_statement) { }
-    public void visit(Do_statement do_statement) { }
-    public void visit(Constant constant) { }
-    public void visit(Return_statement return_statement) { }
-    public void visit(Condition_factor_list condition_factor_list) { }
-    public void visit(Bool_const bool_const) { }
-    public void visit(Array_fld_fix array_fld_fix) { }
-    public void visit(Const_id const_id) { }
-    public void visit(Actual_parameter_list actual_parameter_list) { }
+    public void visit(Array_fld_ident array_fld_ident) { }
+    public void visit(Optional_else optional_else) { }
+    public void visit(Method_decl method_decl) { }
     public void visit(Class_declaration class_declaration) { }
-    public void visit(Addition_term_list addition_term_list) { }
+    public void visit(Optional_extends optional_extends) { }
+    public void visit(Statement_list statement_list) { }
+    public void visit(Array_fld_fix array_fld_fix) { }
     public void visit(Var_declaration_list var_declaration_list) { }
+    public void visit(Rel_operator rel_operator) { }
+    public void visit(Const_identifier const_identifier) { }
+    public void visit(Declaration_section declaration_section) { }
+    public void visit(Multiplication_operator multiplication_operator) { }
+    public void visit(Array_fld_header array_fld_header) { }
+    public void visit(Method_call_ident method_call_ident) { }
+    public void visit(Condition_term condition_term) { }
+    public void visit(Chain_vars_fix chain_vars_fix) { }
+    public void visit(Break_statement break_statement) { }
     public void visit(Char_const char_const) { }
     public void visit(Program_name program_name) { }
-    public void visit(Numeric_const numeric_const) { }
-    public void visit(Formal_parameter_section formal_parameter_section) { }
-    public void visit(Multiplication_factor_list multiplication_factor_list) { }
-    public void visit(Var_id var_id) { }
-    public void visit(Addition_operator addition_operator) { }
-    public void visit(Condition_term_list condition_term_list) { }
-    public void visit(Optional_else optional_else) { }
-    public void visit(Factor factor) { }
-    public void visit(Declaration declaration) { }
-    public void visit(Array_fld_ident array_fld_ident) { }
-    public void visit(Method_decl method_decl) { }
+    public void visit(Const_id const_id) { }
+    public void visit(And_operator and_operator) { }
+    public void visit(Actual_parameter actual_parameter) { }
+    public void visit(Return_statement return_statement) { }
+    public void visit(Constant constant) { }
     public void visit(If_statement_header if_statement_header) { }
-    public void visit(Statement_list statement_list) { }
+    public void visit(Condition condition) { }
+    public void visit(Read_statement read_statement) { }
+    public void visit(Var_id var_id) { }
+    public void visit(Optional_method_decl_section optional_method_decl_section) { }
+    public void visit(Const_declaration_line const_declaration_line) { }
+    public void visit(Begin_cond_pc_fix begin_cond_pc_fix) { }
+    public void visit(Var_identifier var_identifier) { }
+    public void visit(Formal_parameter_list formal_parameter_list) { }
+    public void visit(If_statement if_statement) { }
+    public void visit(Addition_operator addition_operator) { }
+    public void visit(Formal_parameter_section formal_parameter_section) { }
+    public void visit(Actual_parameter_section actual_parameter_section) { }
+    public void visit(Condition_factor_list condition_factor_list) { }
+    public void visit(Class_identifier class_identifier) { }
+    public void visit(Const_id_list const_id_list) { }
+    public void visit(Multiplication_factor_list multiplication_factor_list) { }
+    public void visit(Array_ident array_ident) { }
+    public void visit(Continue_statement continue_statement) { }
+    public void visit(Bool_const bool_const) { }
+    public void visit(Formal_parameter formal_parameter) { }
+    public void visit(Expression expression) { }
+    public void visit(Condition_term_list condition_term_list) { }
+    public void visit(Addition_term_list addition_term_list) { }
+    public void visit(Print_statement print_statement) { }
+    public void visit(Method_decl_list method_decl_list) { }
+    public void visit(Designator_statement designator_statement) { }
+    public void visit(Remember_pc remember_pc) { }
+    public void visit(Designator designator) { }
     public void visit(Var_id_list var_id_list) { }
+    public void visit(Else_jmp_fix else_jmp_fix) { }
+    public void visit(Method_identifier method_identifier) { }
+    public void visit(Formal_param_num_fix formal_param_num_fix) { }
+    public void visit(Actual_parameter_list actual_parameter_list) { }
+    public void visit(Method_definition method_definition) { }
+    public void visit(Statement statement) { }
+    public void visit(Factor factor) { }
+    public void visit(Method_decl_section method_decl_section) { }
+    public void visit(Do_statement do_statement) { }
+    public void visit(Declaration declaration) { }
+    public void visit(Condition_factor condition_factor) { }
+    public void visit(Numeric_const numeric_const) { }
+    public void visit(Method_return_type method_return_type) { }
     public void visit(OperatorLeq OperatorLeq) { visit(); }
     public void visit(OperatorLss OperatorLss) { visit(); }
     public void visit(OperatorGrteq OperatorGrteq) { visit(); }
@@ -89,6 +91,7 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(OperatorOr OperatorOr) { visit(); }
     public void visit(CondTerminalTerm CondTerminalTerm) { visit(); }
     public void visit(CondTermList CondTermList) { visit(); }
+    public void visit(ConditionDerived1 ConditionDerived1) { visit(); }
     public void visit(CondExpression CondExpression) { visit(); }
     public void visit(MethodCall MethodCall) { visit(); }
     public void visit(DesignatorFactor DesignatorFactor) { visit(); }
@@ -127,10 +130,12 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(MethodCallDesignator MethodCallDesignator) { visit(); }
     public void visit(Decrement Decrement) { visit(); }
     public void visit(Increment Increment) { visit(); }
+    public void visit(Designator_statementDerived1 Designator_statementDerived1) { visit(); }
     public void visit(Assignment Assignment) { visit(); }
     public void visit(Continue_statementDerived1 Continue_statementDerived1) { visit(); }
     public void visit(Break_statementDerived1 Break_statementDerived1) { visit(); }
     public void visit(RememberPc RememberPc) { visit(); }
+    public void visit(WhileCondPcFix WhileCondPcFix) { visit(); }
     public void visit(Do_statementDerived1 Do_statementDerived1) { visit(); }
     public void visit(ElseFix ElseFix) { visit(); }
     public void visit(Optional_elseDerived2 Optional_elseDerived2) { visit(); }
@@ -160,6 +165,7 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(FormalTermParameter FormalTermParameter) { visit(); }
     public void visit(FormalParameterList FormalParameterList) { visit(); }
     public void visit(NoParameters NoParameters) { visit(); }
+    public void visit(Formal_parameter_sectionDerived1 Formal_parameter_sectionDerived1) { visit(); }
     public void visit(FormalParameters FormalParameters) { visit(); }
     public void visit(MethodIdentifier MethodIdentifier) { visit(); }
     public void visit(FormalParamNumFix FormalParamNumFix) { visit(); }
@@ -173,6 +179,7 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(Optional_extendsDerived1 Optional_extendsDerived1) { visit(); }
     public void visit(Extends Extends) { visit(); }
     public void visit(ClassIdentifier ClassIdentifier) { visit(); }
+    public void visit(ChainVars ChainVars) { visit(); }
     public void visit(ClassDeclaration ClassDeclaration) { visit(); }
     public void visit(VarIdentifier VarIdentifier) { visit(); }
     public void visit(VarIDArray VarIDArray) { visit(); }
@@ -180,9 +187,9 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(Var_id_listDerived1 Var_id_listDerived1) { visit(); }
     public void visit(VarIDTerm VarIDTerm) { visit(); }
     public void visit(VarIDList VarIDList) { visit(); }
+    public void visit(Var_declaration_lineDerived1 Var_declaration_lineDerived1) { visit(); }
     public void visit(VarDeclarationLine VarDeclarationLine) { visit(); }
     public void visit(NoVariableDeclarations NoVariableDeclarations) { visit(); }
-    public void visit(Var_declaration_listDerived1 Var_declaration_listDerived1) { visit(); }
     public void visit(VarDeclarationList VarDeclarationList) { visit(); }
     public void visit(CharConst CharConst) { visit(); }
     public void visit(BoolConst BoolConst) { visit(); }
